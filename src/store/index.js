@@ -6,20 +6,24 @@ Vue.use(Vuex);
 export default new Vuex.Store({
   state: {
     prevRangeFactor: {},
-    tempAttr: ""
+    prevTextNodeLength: {}
+    // tempAttr: ""
   },
   mutations: {
     saveRangeBeforeTextChange(state, params) {
-      console.log(state.prevRangeFactor, "我开始了", params.rangeFactor);
+      console.log("我开始了", params.rangeFactor);
       state.prevRangeFactor = params.rangeFactor;
     },
+    savePreTextNodeLength(state, param) {
+      state.prevTextNodeLength = param.prelength;
+    }
     // getRange(state) {
     //   return state.prevRangeFactor;
     // },
-    temptest(state, param) {
-      console.log("payload", param);
-      state.tempAttr = param;
-    }
+    // temptest(state, param) {
+    //   console.log("payload", param);
+    //   state.tempAttr = param;
+    // }
   },
   actions: {},
   modules: {}
