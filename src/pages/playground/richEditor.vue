@@ -4,7 +4,7 @@
     <div class="shell">
       <div class="of">
         <div class="toolBar">
-          <el-tag effect="plain" @click="test">
+          <!-- <el-tag effect="plain" @click="test">
             decoration
           </el-tag>
           <el-tag effect="plain" @click="anotest">
@@ -24,7 +24,7 @@
           </el-tag>
           <el-tag effect="plain" @click="changeText">
             改变当前节点文本
-          </el-tag>
+          </el-tag> -->
         </div>
         <!-- <div
           id="theGhost"
@@ -185,8 +185,8 @@ export default {
     getTarget() {
       console.log("click", event.target);
     },
-    getInnerHTML() {
-      console.log("oninput", this.$refs.editor);
+    getInnerHTML(range) {
+      console.log("oninput", range, this.$refs.editor);
     },
     getTempChildNodes() {
       // console.log

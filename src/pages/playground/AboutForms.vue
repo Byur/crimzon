@@ -231,6 +231,12 @@ export default {
     };
   },
   methods: {
+    debounce(fn,delay){
+      return ()=>{
+        let timer
+        
+      }
+    },
     acceptCM() {
       switch (this.currentType) {
         case 0:

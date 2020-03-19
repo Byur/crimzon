@@ -212,6 +212,8 @@ export default {
   //   }
   // },
   methods: {
+    // debounce
+
     // events
     start() {
       console.log("-----------------start---------------------", event);
