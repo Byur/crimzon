@@ -6,8 +6,6 @@
     contenteditable
     @input="catchInput"
     @keyup="delectionLimit"
-    @keydown="getRange"
-    @click="getRange"
     @compositionstart="start"
     @compositionend="end"
   ></div>
@@ -219,7 +217,7 @@ export default {
     // events
     start() {
       console.log("-----------------start---------------------", event);
-
+      this.saveRange()
       this.directInput = false;
     },
     end() {
@@ -353,12 +351,6 @@ export default {
     // 监听删除操作，返回虚拟dom
     // 0320，使用debounce，应对连续输入状况150毫秒延迟后触发一次，若间隔小于150，将重置计时
      delectionLimit:_.debounce(async function(event) {
-      //
-      // console.log(
-      //   "松开按键时,vuex中的range",
-      //   this.$store.state.prevRangeFactor
-      // );
-
       console.time("-----------------timer--------------------");
 
       // 删除的场景：1：退格键，range跨节点/多文本删除 2：删除键
@@ -379,7 +371,8 @@ export default {
       //     endOffset: window.getSelection().getRangeAt(0).endOffset
       //   }
       // });
-      // console.log(this.$store.prevRange); // console.log()一个复杂类型（具有get、set属性）的值的时候，console.log展开看到的是这个变量当前的值，如果需要这个变量全部的属性，需要进行深拷贝，而JSON.stringify这种级别的深拷贝对不可枚举的部分和对象的方法本身不能实现序列化，需要比较麻烦的额外处理，所以如果只使用少量属性的话，建议单独取出如下，这里取出的startOffset是快照的数值而不是当前的数值
+      // console.log(this.$store.prevRange); 
+      // console.log()一个复杂类型（具有get、set属性）的值的时候，console.log展开看到的是这个变量当前的值，如果需要这个变量全部的属性，需要进行深拷贝，而JSON.stringify这种级别的深拷贝对不可枚举的部分和对象的方法本身不能实现序列化，需要比较麻烦的额外处理，所以如果只使用少量属性的话，建议单独取出如下，这里取出的startOffset是快照的数值而不是当前的数值
       // let startContainer = this.range.startContainer;
       // // this.rangeKeeper = startContainer;
       // let startOffset = this.range.startOffset;
