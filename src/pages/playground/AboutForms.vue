@@ -31,7 +31,7 @@
                 @copy="acceptCM(2)"
                 @focus="acceptCM(0)"
                 @select="acceptCM(1)"
-                v-model="stuff.content"
+                @keydown="testDebounce"
               ></textarea>
             </form>
             <!-- 富文本编辑 -->
@@ -158,6 +158,7 @@
 </template>
 <script>
 // import ArrayBox from "./components/ArrayBox";
+let _ = require('lodash')
 export default {
   name: "AboutForms",
   components: {
@@ -227,16 +228,29 @@ export default {
           name: "obj2",
           behavior: "none"
         }
-      ]
+      ],
+      timer: null
     };
   },
+  watch: {
+    // stuff: {
+    //   handler(val) {
+    //     this.debounce(this.testfunc, 500)
+    //     console.log(val)
+    //   },
+    //   deep: true
+    // }
+  },
   methods: {
-    debounce(fn,delay){
-      return ()=>{
-        let timer
-        
-      }
+
+    testDebounce:_.debounce(function(){
+      console.error('我着火了')
+      this.testfunc()
+    },500),
+    testfunc() {
+      console.log(this.$refs.textarea.value)
     },
+
     acceptCM() {
       switch (this.currentType) {
         case 0:

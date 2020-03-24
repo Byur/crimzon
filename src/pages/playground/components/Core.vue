@@ -14,6 +14,7 @@
 </template>
 <script>
 import elementNode from "../baseclass/tags";
+let _ = require('lodash')
 export default {
   // @mouseleave="checkRange"
   // @mousedown="getTarget"
@@ -186,8 +187,9 @@ export default {
     // },
     trees: {
       handler(val) {
+        
         this.innerText = val.toString();
-        console.log("trees watcher", val);
+        console.log("------------------------------------------------trees watcher", val);
       },
       deep: true
     }
@@ -349,7 +351,8 @@ export default {
      * ，判断keyCode等于8时触发，目前通过触发keyup事件触发，要使range位置返回原位，需要临时保存删除之后文档中所在的元素节点的ID，，暂时不需要额外参数
      */
     // 监听删除操作，返回虚拟dom
-    async delectionLimit() {
+    // 0320，使用debounce，应对连续输入状况150毫秒延迟后触发一次，若间隔小于150，将重置计时
+     delectionLimit:_.debounce(async function(event) {
       //
       // console.log(
       //   "松开按键时,vuex中的range",
@@ -441,8 +444,11 @@ export default {
               // console.log(range);
               // this.rangeForTextChange(startContainer, startOffset).then(res => {
               //   console.log("res", res);
-
-              target.text = currentNodeValue; //keyup时使用
+              console.warn('-------进入debounce----')
+              // _.debounce(()=>{
+                console.error('---------------------------在debounce中-------------------------')
+                target.text = currentNodeValue; //keyup时使用
+              // },20)
               // });
 
               console.log("删除后的range", this.range);
@@ -472,22 +478,25 @@ export default {
           // }
         } else {
           // console.log("正常输入", this.$store.state.prevRangeFactor);
-          this.saveRange();
-          console.log("keydown时刻的range", this.$store.state.prevRangeFactor);
-          let currentOperateObj = this.range.commonAncestorContainer.parentNode;
-          // 获取相应的虚拟dom的引用
-          await this.findTargetNode(currentOperateObj).then(res => {
-            let target = res;
-            console.log("正在受影响的实例", target);
-            let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
-            console.log(currentNodeValue);
-            target.text = currentNodeValue;
-            setTimeout(() => {
-              this.rangeForTextChange();
-            }, 0);
+          // _.debounce( async ()=>{
+            this.saveRange();
+            console.log("keydown时刻的range", this.$store.state.prevRangeFactor);
+            let currentOperateObj = this.range.commonAncestorContainer.parentNode;
+            // 获取相应的虚拟dom的引用
+            this.findTargetNode(currentOperateObj).then(res => {
+              let target = res;
+              console.log("正在受影响的实例", target);
+              let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
+              console.error('--------修改值---------',currentNodeValue);
+              target.text = currentNodeValue;
+              setTimeout(() => {
+                this.rangeForTextChange();
+              }, 0);
+              return;
+            });
             return;
-          });
-          return;
+          // },30)
+
           // this.rangeForTextChange();
           // // console.timeEnd(
           // //   "------------------------------timer-------------------"
@@ -546,7 +555,7 @@ export default {
           }
         }
       }
-    },
+    },150),
 
     /**
      * @feature
