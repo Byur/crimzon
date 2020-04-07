@@ -8,6 +8,7 @@
     @keyup="delectionLimit"
     @compositionstart="start"
     @compositionend="end"
+    @compositionupdate="watcher"
   ></div>
 </template>
 <script>
@@ -42,10 +43,15 @@ export default {
       newPara.children = [newinlineEle];
       origin.children.push(newPara);
       this.trees = origin;
-    }, 2);
+    }, 0);
   },
   data() {
     return {
+      // 20200404，追加输入锁，在连续输入（使用输入法）转为直接输入一段时间之内，按键事件所触发的输入事件无效。
+      // 输入锁：this.directInput由false转为true时，
+      // 本来想使用栈的概念去判断栈顶和next栈之间的关系，来决定是否启用这个锁，但因为栈的概念还没弄清楚，暂时放置'
+      inputLock:false,
+      inputLockTimer:null,
       // 20200219追加功能键键码列表
       // 其中可能会出现的问题有：不同浏览器小键盘和数字键的键码不一样，比如在numlock打开的情况下，谷歌浏览器小键盘0的键码和数字键0的键码是一样的，这点在IE上可能会不一样，因为另一份资料显示小键盘0的键码是96，数字键0是48；除此之外，delete键，键码46删除文本的按键，还没有做响应的事件，暂时不知道有没有必要做，等做好了键码屏蔽之后，将会进行测试,enter键未做屏蔽，将会用来断行，新建一个p元素
       funcKeyCodes: [
@@ -122,8 +128,11 @@ export default {
         56,
         57
       ],
-      // 判断是否打开了输入法，true为直接输入，false为输入法输入
+      // 当前判断是否打开了输入法，true为直接输入，false为输入法输入
       directInput: true,
+      // 上一次触发按键时的输入模式
+      lastStackInputMode:0,
+      
       // 临时存储输入法输入时键入的文字或词语
       wordKeeper: "",
       // rangeKeeper: {},
@@ -183,11 +192,28 @@ export default {
     //   let i = document.getElementById("theGhost");
     //   console.log(val, i.childNodes);
     // },
+    directInput(val){
+      // 如果更改后的值变为true，则证明之前为false(连续输入)，将使输入锁短暂开启
+      if (val){
+        if (this.inputLockTimer===null){
+          console.log('现在开启输入锁')
+          this.inputLock = true
+          this.inputLockTimer = setTimeout(()=>{
+            console.log('现在关闭输入锁')
+            this.inputLock = false
+            this.inputLockTimer = null
+          },200)
+        }
+      }
+    },
     trees: {
       handler(val) {
         
         this.innerText = val.toString();
-        console.log("------------------------------------------------trees watcher", val);
+        // setTimeout(() => {
+        //   this.rangeForTextChange();
+        //   console.log("------------------------------------------------trees watcher", val);
+        // }, 10);
       },
       deep: true
     }
@@ -215,6 +241,9 @@ export default {
     // debounce
 
     // events
+    watcher(){
+      console.log('旅の途中', event)
+    },
     start() {
       console.log("-----------------start---------------------", event);
       this.saveRange()
@@ -249,8 +278,8 @@ export default {
         console.log(window.getSelection().getRangeAt(0));
         // this.wordKeeper = "";
         // console.log(target, this.trees);
+        this.directInput = true;
       });
-      this.directInput = true;
     },
     getRange() {
       console.log("keydown此时的range", window.getSelection().getRangeAt(0));
@@ -276,7 +305,7 @@ export default {
         "--------------------directInput------------------------",
         this.directInput
       );
-      console.log("触发了input", event, window.getSelection().getRangeAt(0));
+      console.log(event, window.getSelection().getRangeAt(0));
       // this.saveRange();
       // if ()
       // this.saveRange();
@@ -359,7 +388,7 @@ export default {
        * @readonly
        * 文本更新之后导致的视图刷新之后range位置重置，将当前焦点的range对象部分参数存入状态管理，然后在删除文本之后取出，新建一个range对象插回
        */
-      console.log("事件对象", event);
+      console.log("事件对象", event,this.directInput);
       // this.range = window.getSelection().getRangeAt(0);
       // this.$store.commit("saveRangeBeforeTextChange", {
       //   rangeFactor: {
@@ -390,6 +419,7 @@ export default {
           "-----------------------被屏蔽的键码是----------------",
           event.keyCode
         );
+        event.preventDefault()
         return false;
       }
       if (this.directInput) {
@@ -472,6 +502,10 @@ export default {
         } else {
           // console.log("正常输入", this.$store.state.prevRangeFactor);
           // _.debounce( async ()=>{
+            if (this.inputLock){
+              event.preventDefault();
+              return;
+            }
             this.saveRange();
             console.log("keydown时刻的range", this.$store.state.prevRangeFactor);
             let currentOperateObj = this.range.commonAncestorContainer.parentNode;
@@ -509,7 +543,7 @@ export default {
         // 非直接输出模式，这时候退格键、回车键、加减、数字键将操作输入法，而不会影响已经同步了的文本,要做额外处理
         // 这里离应该做一个功能键的列表，当他们按下的时候，不做任何操作，return false就完事
         if (this.funcKeyInCompositeMode.indexOf(event.keyCode) !== -1) {
-          console.log("连续输入模式下此次屏蔽的按键是", event.keyCode);
+          // console.log("连续输入模式下此次屏蔽的按键是", event.keyCode);
           return false;
         } else {
           console.log(
