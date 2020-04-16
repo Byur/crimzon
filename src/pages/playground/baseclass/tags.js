@@ -1,3 +1,5 @@
+// 单标签列表
+const singelTagList = ["br", "img"];
 export default class elementNode {
   // except:
   // tag-String
@@ -35,20 +37,27 @@ export default class elementNode {
       console.log(`${i}:${this.style[i]};`);
     }
     // console.log()
-    let head = `<${this.tag}${
-      formatStyle ? "style=" + formatStyle : ""
-    } ${formatAttr}>`;
-    let tail = `</${this.tag}>`;
-    if (this.children.length === 0) {
-      return head + this.text + tail;
+    if (singelTagList.indexOf(this.tag) === -1) {
+      const head = `<${this.tag}${
+        formatStyle ? "style=" + formatStyle : ""
+      } ${formatAttr}>`;
+      const tail = `</${this.tag}>`;
+      if (this.children.length === 0) {
+        return head + this.text + tail;
+      } else {
+        let filterenable = this.children.filter(item => {
+          return item.display === true;
+        });
+        let innerHTML = filterenable.reduce(function(prev, cur) {
+          return prev + cur;
+        });
+        return head + innerHTML + tail;
+      }
     } else {
-      let filterenable = this.children.filter(item => {
-        return item.display === true;
-      });
-      let innerHTML = filterenable.reduce(function(prev, cur) {
-        return prev + cur;
-      });
-      return head + innerHTML + tail;
+      const theRudeConstructor = `<${this.tag}${
+        formatStyle ? "style=" + formatStyle : ""
+      } ${formatAttr}/>`;
+      return theRudeConstructor;
     }
   }
   // valueOf() {}

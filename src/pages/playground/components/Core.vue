@@ -1,19 +1,25 @@
 <template>
-  <div
-    id="theGhost"
-    ref="wysiwys"
-    v-html="innerText"
-    contenteditable
-    @input="catchInput"
-    @keyup="delectionLimit"
-    @compositionstart="start"
-    @compositionend="end"
-    @compositionupdate="watcher"
-  ></div>
+  <div class="container">
+    <div class="toolbar"></div>
+    <div
+      id="theGhost"
+      ref="wysiwys"
+      v-html="innerText"
+      contenteditable
+      @beforepaste="handleBeforePaste"
+      @paste="handlePasteAction"
+      @input="catchInput"
+      @keydown="exectionRestricting"
+      @keyup="delectionLimit"
+      @compositionstart="start"
+      @compositionend="end"
+      @compositionupdate="watcher"
+    ></div>
+  </div>
 </template>
 <script>
 import elementNode from "../baseclass/tags";
-let _ = require('lodash')
+let _ = require("lodash");
 export default {
   // @mouseleave="checkRange"
   // @mousedown="getTarget"
@@ -47,13 +53,28 @@ export default {
   },
   data() {
     return {
-      // 20200404，追加输入锁，在连续输入（使用输入法）转为直接输入一段时间之内，按键事件所触发的输入事件无效。
-      // 输入锁：this.directInput由false转为true时，
-      // 本来想使用栈的概念去判断栈顶和next栈之间的关系，来决定是否启用这个锁，但因为栈的概念还没弄清楚，暂时放置'
-      inputLock:false,
-      inputLockTimer:null,
+      // 20200416,开始插入toolbar概念,追加安静制图机,首先提供的参数效果不能互相覆盖,经整理,只修改样式,不对布局(指视觉上的,实际上只要影响了range,都会造成布局改变)造成影响的可修改项目前有:粗体(fontweight),斜体(italic),删除线(through-line),下划线(underline),突出(bgc),颜色(color),字号(fontsize),边框(border);
+      theSilentCartoGrapher: {
+        color: "#000000",
+        "text-decoration": [],
+        "background-color": "",
+        "font-style": "",
+        "font-size": "",
+        border: ""
+      },
+      // 预选色盘,暂时弃用
+      colorBar:[
+
+      ],
+      
+
+      // 20200404,追加输入锁,在连续输入（使用输入法）转为直接输入一段时间之内,按键事件所触发的输入事件无效。
+      // 输入锁：this.directInput由false转为true时,
+      // 本来想使用栈的概念去判断栈顶和next栈之间的关系,来决定是否启用这个锁,但因为栈的概念还没弄清楚,暂时放置'
+      // inputLock: false,
+      // inputLockTimer: null,
       // 20200219追加功能键键码列表
-      // 其中可能会出现的问题有：不同浏览器小键盘和数字键的键码不一样，比如在numlock打开的情况下，谷歌浏览器小键盘0的键码和数字键0的键码是一样的，这点在IE上可能会不一样，因为另一份资料显示小键盘0的键码是96，数字键0是48；除此之外，delete键，键码46删除文本的按键，还没有做响应的事件，暂时不知道有没有必要做，等做好了键码屏蔽之后，将会进行测试,enter键未做屏蔽，将会用来断行，新建一个p元素
+      // 其中可能会出现的问题有：不同浏览器小键盘和数字键的键码不一样,比如在numlock打开的情况下,谷歌浏览器小键盘0的键码和数字键0的键码是一样的,这点在IE上可能会不一样,因为另一份资料显示小键盘0的键码是96,数字键0是48；除此之外,delete键,键码46删除文本的按键,还没有做响应的事件,暂时不知道有没有必要做,等做好了键码屏蔽之后,将会进行测试,enter键未做屏蔽,将会用来断行,新建一个p元素
       funcKeyCodes: [
         112,
         113,
@@ -128,11 +149,11 @@ export default {
         56,
         57
       ],
-      // 当前判断是否打开了输入法，true为直接输入，false为输入法输入
+      // 当前判断是否打开了输入法,true为直接输入,false为输入法输入
       directInput: true,
       // 上一次触发按键时的输入模式
-      lastStackInputMode:0,
-      
+      lastStackInputMode: 0,
+
       // 临时存储输入法输入时键入的文字或词语
       wordKeeper: "",
       // rangeKeeper: {},
@@ -140,7 +161,7 @@ export default {
       currentRange: {},
       worker: "",
       innerText: "",
-      // 用于保存上一步的配置，通过后退触发，可前进,暂不开发
+      // 用于保存上一步的配置,通过后退触发,可前进,暂不开发
       // Ticks: [
       //   {
       //     range:{},
@@ -192,23 +213,22 @@ export default {
     //   let i = document.getElementById("theGhost");
     //   console.log(val, i.childNodes);
     // },
-    directInput(val){
-      // 如果更改后的值变为true，则证明之前为false(连续输入)，将使输入锁短暂开启
-      if (val){
-        if (this.inputLockTimer===null){
-          console.log('现在开启输入锁')
-          this.inputLock = true
-          this.inputLockTimer = setTimeout(()=>{
-            console.log('现在关闭输入锁')
-            this.inputLock = false
-            this.inputLockTimer = null
-          },200)
-        }
-      }
-    },
+    // directInput(val) {
+    //   // 如果更改后的值变为true,则证明之前为false(连续输入),将使输入锁短暂开启
+    //   if (val) {
+    //     if (this.inputLockTimer === null) {
+    //       console.log("现在开启输入锁");
+    //       this.inputLock = true;
+    //       this.inputLockTimer = setTimeout(() => {
+    //         console.log("现在关闭输入锁");
+    //         this.inputLock = false;
+    //         this.inputLockTimer = null;
+    //       }, 200);
+    //     }
+    //   }
+    // },
     trees: {
       handler(val) {
-        
         this.innerText = val.toString();
         // setTimeout(() => {
         //   this.rangeForTextChange();
@@ -241,15 +261,16 @@ export default {
     // debounce
 
     // events
-    watcher(){
-      console.log('旅の途中', event)
+    // 输入动作触发顺序compositionstart-input-compositionend
+    watcher() {
+      console.log("旅の途中", event);
     },
     start() {
       console.log("-----------------start---------------------", event);
-      this.saveRange()
+      this.saveRange();
       this.directInput = false;
     },
-    end() {
+    end: _.debounce(function(event) {
       console.log("-----------------end---------------------", event);
       this.wordKeeper = event.data;
       let currentOperateObj = this.range.commonAncestorContainer.parentNode;
@@ -274,13 +295,15 @@ export default {
         target.text = currentNodeValue;
         console.log("结束工作", target.text);
         // console.log(window.getSelection().getRangeAt(0));
-        this.rangeForTextChange(0);
-        console.log(window.getSelection().getRangeAt(0));
+        setTimeout(() => {
+          this.rangeForTextChange();
+          this.directInput = true;
+        }, 0);
         // this.wordKeeper = "";
         // console.log(target, this.trees);
-        this.directInput = true;
       });
-    },
+    }, 1000),
+
     getRange() {
       console.log("keydown此时的range", window.getSelection().getRangeAt(0));
       // this.range = window.getSelection().getRangeAt(0);
@@ -299,8 +322,8 @@ export default {
       // console.log("按下按键", event.target);
     },
     catchInput() {
-      // 删除、粘贴、剪切、退格，在这里执行删除操作
-      // 使用剪贴板内容的时候，需要计算剪贴板内容的长度，然后再与startOffset作为新的startOffset
+      // 删除、粘贴、剪切、退格,在这里执行删除操作
+      // 使用剪贴板内容的时候,需要计算剪贴板内容的长度,然后再与startOffset作为新的startOffset
       console.log(
         "--------------------directInput------------------------",
         this.directInput
@@ -317,7 +340,7 @@ export default {
       // target.text = currentNodeValue; //keyup时使用
       // // });
 
-      // // 多次测试，这个函数完整运行时间在15MS之内，所以给他设了一个20MS的延迟，使range回退
+      // // 多次测试,这个函数完整运行时间在15MS之内,所以给他设了一个20MS的延迟,使range回退
       // setTimeout(() => {
       //   this.rangeForTextChange();
       // }, 30);
@@ -358,37 +381,96 @@ export default {
       // this.trees.this // if
       // .$emit("input", event);
     },
+    exectionRestricting() {
+      if (this.directInput) {
+        // 退格限制
+        if (event.keyCode === 8) {
+          this.saveRange();
+          if (
+            this.trees.children.length === 1 &&
+            this.range.commonAncestorContainer.children[0].tagName === "BR"
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          } else {
+            return;
+          }
+        }
+        // 回车
+        else if (event.keyCode === 13) {
+          // 一般情况下,在trees的children之下增加一个p类型的新节点
+        }
+      }
+    },
+    /**
+     * @event
+     * 粘贴前的操作,可用于拦截默认事件进行敏感词过滤等
+     */
+    handleBeforePaste() {
+      return;
+    },
+    /**
+     * @event
+     * 粘贴动作发生时的事件，包含了右键菜单栏复制和ctrl+v键，该处调用剪贴板api，但因为不需要对默认事件做出干涉，所以应该不需要考虑兼容性的问题，这里需要做的是把粘贴内容真正嵌入data中并且更新range
+     */
+    handlePasteAction() {
+      event.preventDefault();
+      this.saveRange();
+      console.log("paste此时的range", this.range);
+      console.time("-----when paste-----");
+      // 0416以下是带格式渲染的时候,从外部粘贴进来的文本所展示的结构,比如说从word或者excel粘贴文本进去,会跟粘贴一般文本有很大不同,当前无力完成,日后将作为一个拓展功能点追加
+      // console.log("复制事件:文本格式", event.clipboardData.getData("text/plain"));
+      // console.log("复制事件:绘本格式", event.clipboardData.getData("text/html"));
 
+      const strFromCopy = event.clipboardData.getData("text");
+      // this.saveRange();
+
+      let currentOperateObj = this.range.commonAncestorContainer.parentNode;
+      // 获取相应的虚拟dom的引用
+      this.findTargetNode(currentOperateObj).then(res => {
+        let target = res;
+        console.log("正在受影响的实例", target);
+        // this.saveRange();
+        let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
+        console.error("--------修改值---------", currentNodeValue);
+        target.text = currentNodeValue + strFromCopy;
+        // this.rangeForTextChange();
+        setTimeout(() => {
+          this.rangeForTextChange(strFromCopy.length);
+        }, 3);
+        console.timeEnd("-----when paste-----");
+        return;
+      });
+    },
     /**
      * @event
      * keyup事件
      * @ignore 以下是开发日志：
-     * 20200213:当前是监听退格键，预计改成监听按键事件，非特殊按键则认为是正常输入，用这个判断来识别退格、粘贴、剪切、删除和输入和类型
+     * 20200213:当前是监听退格键,预计改成监听按键事件,非特殊按键则认为是正常输入,用这个判断来识别退格、粘贴、剪切、删除和输入和类型
      *
-     * 20200213，退格：退格操作简单分为三步：
-     * 第一步是删除文档中的响应的文本节点，这时候视觉效果来看用户选择的文本已经被删除了，但虚拟dom中还是原来的样子，这里我们可以获取当前文档中，也就是表面删除后的range对象和文本节点；
-     * 第二步是同步html文档和虚拟dom中相关实例的文本，这里需要通过第一步获取的文本节点的parentNode，也就是他所属的元素节点，通过接着元素节点找到虚拟dom中相应的实例、然后将文本节点的值赋值给这个实例的text属性；
-     * 第三步是给第二步擦屁股，因为依赖更新之后，会引起浏览器的重绘，这个时候会出现焦点出现在文档流里编辑器区域的头部，所以我们需要使焦点出现在我们修改/删除后的文本的末尾，这一步操作需要将现有的range对象修改/替换为第一步提到的range对象。
+     * 20200213,退格：退格操作简单分为三步：
+     * 第一步是删除文档中的响应的文本节点,这时候视觉效果来看用户选择的文本已经被删除了,但虚拟dom中还是原来的样子,这里我们可以获取当前文档中,也就是表面删除后的range对象和文本节点；
+     * 第二步是同步html文档和虚拟dom中相关实例的文本,这里需要通过第一步获取的文本节点的parentNode,也就是他所属的元素节点,通过接着元素节点找到虚拟dom中相应的实例、然后将文本节点的值赋值给这个实例的text属性；
+     * 第三步是给第二步擦屁股,因为依赖更新之后,会引起浏览器的重绘,这个时候会出现焦点出现在文档流里编辑器区域的头部,所以我们需要使焦点出现在我们修改/删除后的文本的末尾,这一步操作需要将现有的range对象修改/替换为第一步提到的range对象。
      *
-     * 20200213，正常输入
-     * 输入和删除都会触发oninput事件，但这两者的不同之处在于输入场景的时候文本长度会变长，而删除的时候文本长度会变短，所以我想如果输入时要保持range对象，目标文本的前后文本长度是需要记录的，这里先假设keydown和keyup两个时刻文本长度会有变化，那恢复range的时候正确的startOffset和endOffset应该为：输入前的startOffset+（输入后的文本长度-输入前的文本长度）,这个公式一样可以应用于选中多文本的替换输入（或者粘贴）的场景。（经实测键盘事件不能获取到最深的文本节点所属的元素节点，因此将改为使用range的startContainer获取，为了简洁，可能要考虑将存ID改为保存节点本身）
-     * 20200218 已经将英文的正常输入做好，现在由于部分不能输出字符的按键被触发的时候，会因为文本节点长度找不到range+1的位置，这点将在后续对功能键做屏蔽处理
-     * 20200218 关于上面这点问题与中英文输入的结合，目前打算是输入法输入的时候将，在keydown事件里将空格键做一个意外处理屏蔽掉，然后
+     * 20200213,正常输入
+     * 输入和删除都会触发oninput事件,但这两者的不同之处在于输入场景的时候文本长度会变长,而删除的时候文本长度会变短,所以我想如果输入时要保持range对象,目标文本的前后文本长度是需要记录的,这里先假设keydown和keyup两个时刻文本长度会有变化,那恢复range的时候正确的startOffset和endOffset应该为：输入前的startOffset+（输入后的文本长度-输入前的文本长度）,这个公式一样可以应用于选中多文本的替换输入（或者粘贴）的场景。（经实测键盘事件不能获取到最深的文本节点所属的元素节点,因此将改为使用range的startContainer获取,为了简洁,可能要考虑将存ID改为保存节点本身）
+     * 20200218 已经将英文的正常输入做好,现在由于部分不能输出字符的按键被触发的时候,会因为文本节点长度找不到range+1的位置,这点将在后续对功能键做屏蔽处理
+     * 20200218 关于上面这点问题与中英文输入的结合,目前打算是输入法输入的时候将,在keydown事件里将空格键做一个意外处理屏蔽掉,然后
      *
-     * ，判断keyCode等于8时触发，目前通过触发keyup事件触发，要使range位置返回原位，需要临时保存删除之后文档中所在的元素节点的ID，，暂时不需要额外参数
+     * ,判断keyCode等于8时触发,目前通过触发keyup事件触发,要使range位置返回原位,需要临时保存删除之后文档中所在的元素节点的ID,,暂时不需要额外参数
      */
-    // 监听删除操作，返回虚拟dom
-    // 0320，使用debounce，应对连续输入状况150毫秒延迟后触发一次，若间隔小于150，将重置计时
-     delectionLimit:_.debounce(async function(event) {
-      console.time("-----------------timer--------------------");
-
-      // 删除的场景：1：退格键，range跨节点/多文本删除 2：删除键
+    // 监听删除操作,返回虚拟dom
+    // 0320,使用debounce,应对连续输入状况150毫秒延迟后触发一次,若间隔小于150,将重置计时
+    delectionLimit: _.debounce(async function(event) {
+      // console.time("-----timer-----\n");
+      // 删除的场景：1：退格键,range跨节点/多文本删除 2：删除键
 
       /**
        * @readonly
-       * 文本更新之后导致的视图刷新之后range位置重置，将当前焦点的range对象部分参数存入状态管理，然后在删除文本之后取出，新建一个range对象插回
+       * 文本更新之后导致的视图刷新之后range位置重置,将当前焦点的range对象部分参数存入状态管理,然后在删除文本之后取出,新建一个range对象插回
        */
-      console.log("事件对象", event,this.directInput);
+      console.log("事件对象", event, this.directInput);
       // this.range = window.getSelection().getRangeAt(0);
       // this.$store.commit("saveRangeBeforeTextChange", {
       //   rangeFactor: {
@@ -400,8 +482,8 @@ export default {
       //     endOffset: window.getSelection().getRangeAt(0).endOffset
       //   }
       // });
-      // console.log(this.$store.prevRange); 
-      // console.log()一个复杂类型（具有get、set属性）的值的时候，console.log展开看到的是这个变量当前的值，如果需要这个变量全部的属性，需要进行深拷贝，而JSON.stringify这种级别的深拷贝对不可枚举的部分和对象的方法本身不能实现序列化，需要比较麻烦的额外处理，所以如果只使用少量属性的话，建议单独取出如下，这里取出的startOffset是快照的数值而不是当前的数值
+      // console.log(this.$store.prevRange);
+      // console.log()一个复杂类型（具有get、set属性）的值的时候,在chrome里console.log展开看到的是这个变量当前的值而不是代码执行时的快照,如果需要这个变量全部的属性,需要进行深拷贝,而JSON.stringify这种级别的深拷贝对不可枚举的部分和对象的方法本身不能实现序列化,需要比较麻烦的额外处理,所以如果只使用少量属性的话,建议单独取出如下,这里取出的startOffset是快照的数值而不是当前的数值
       // let startContainer = this.range.startContainer;
       // // this.rangeKeeper = startContainer;
       // let startOffset = this.range.startOffset;
@@ -412,14 +494,14 @@ export default {
       //   // JSON.parse(JSON.stringify(window.getSelection().getRangeAt(0)))
       //   // JSON.stringify(window.getSelection().getRangeAt(0))
       // );
-      // 直接输出模式，这时候的退格键会将文本删除
+      // 直接输出模式,这时候的退格键会将文本删除
 
       if (this.funcKeyCodes.indexOf(event.keyCode) !== -1) {
         console.log(
-          "-----------------------被屏蔽的键码是----------------",
+          "-----------------------keyup被屏蔽的键码是----------------",
           event.keyCode
         );
-        event.preventDefault()
+        event.preventDefault();
         return false;
       }
       if (this.directInput) {
@@ -427,8 +509,8 @@ export default {
           // let rangeBeforeDel = window.getSelection().getRangeAt(0);
           // this.directInput = true;
           this.saveRange();
-          console.log("删除操作，当前的range为", this.range);
-          // 当一个p元素的文本刚好被删空的时候，其中会剩下一个br元素保持P元素在页面中的位置，如果继续删除，将会退回上一行，之后的页面中这个P元素就没有体积了，为了避免这点，当只剩一个块级元素节点时、当该节点中只有一个起换行作用的元素节点BR时，删除不应该触发，所以在这里阻止了默认事件的发生。
+          console.log("删除操作,当前的range为", this.range);
+          // 当一个p元素的文本刚好被删空的时候,其中会剩下一个br元素保持P元素在页面中的位置,如果继续删除,将会退回上一行,之后的页面中这个P元素就没有体积了,为了避免这点,当只剩一个块级元素节点时、当该节点中只有一个起换行作用的元素节点BR时,删除不应该触发,所以在这里阻止了默认事件的发生。
           if (
             // 当前受影响的节点是否是元素节点
             this.range.commonAncestorContainer.nodeType === 1 &&
@@ -438,8 +520,9 @@ export default {
             this.range.commonAncestorContainer.children[0].nodeName === "BR"
           ) {
             console.log("???");
-            event.preventDefault();
-            console.log("事件对象", event);
+            // event.preventDefault();
+            event.stopImmediatePropagation();
+            console.log("删除事件对象", event);
             // event.returnValue = false;
             return false;
           } else {
@@ -467,16 +550,18 @@ export default {
               // console.log(range);
               // this.rangeForTextChange(startContainer, startOffset).then(res => {
               //   console.log("res", res);
-              console.warn('-------进入debounce----')
+              console.warn("-------进入debounce----");
               // _.debounce(()=>{
-                console.error('---------------------------在debounce中-------------------------')
-                target.text = currentNodeValue; //keyup时使用
+              console.error(
+                "---------------------------在debounce中-------------------------"
+              );
+              target.text = currentNodeValue; //keyup时使用
               // },20)
               // });
 
               console.log("删除后的range", this.range);
               // this.saveRange();
-              // 多次测试，这个函数完整运行时间在15MS之内，所以给他设了一个20MS的延迟，使range回退
+              // 多次测试,这个函数完整运行时间在15MS之内,所以给他设了一个20MS的延迟,使range回退
               setTimeout(() => {
                 this.rangeForTextChange();
               }, 10);
@@ -493,7 +578,7 @@ export default {
           // ) {
           //   console.log("已经被拦截", this.trees);
           //   event.preventDefault();
-          //   // 0129 之前没有加return false，阻止默认事件无效，原因未知，加了之后有效了
+          //   // 0129 之前没有加return false,阻止默认事件无效,原因未知,加了之后有效了
           //   return false;
           // } else {
           //   console.log("未被拦截", this.trees);
@@ -502,87 +587,77 @@ export default {
         } else {
           // console.log("正常输入", this.$store.state.prevRangeFactor);
           // _.debounce( async ()=>{
-            if (this.inputLock){
-              event.preventDefault();
-              return;
-            }
-            this.saveRange();
-            console.log("keydown时刻的range", this.$store.state.prevRangeFactor);
-            let currentOperateObj = this.range.commonAncestorContainer.parentNode;
-            // 获取相应的虚拟dom的引用
-            this.findTargetNode(currentOperateObj).then(res => {
-              let target = res;
-              console.log("正在受影响的实例", target);
-              let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
-              console.error('--------修改值---------',currentNodeValue);
-              target.text = currentNodeValue;
-              setTimeout(() => {
-                this.rangeForTextChange();
-              }, 0);
-              return;
-            });
-            return;
-          // },30)
-
-          // this.rangeForTextChange();
-          // // console.timeEnd(
-          // //   "------------------------------timer-------------------"
-          // // );
-          // this.rangeForTextChange();
-          // if (event.data) {
-
+          // if (this.inputLock){
+          //   event.preventDefault();
+          //   return;
           // }
-          // this.rangeForTextChange(1);
-          // setTimeout(() => {
-          //   this.rangeForTextChange(1);
-          // }, 25);
+          this.saveRange();
+          console.log("keyup时刻的range", this.$store.state.prevRangeFactor);
+          let currentOperateObj = this.range.commonAncestorContainer.parentNode;
+          // 获取相应的虚拟dom的引用
+          this.findTargetNode(currentOperateObj).then(res => {
+            let target = res;
+            console.log("正在受影响的实例", target);
+            let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
+            // console.error("--------修改值---------", currentNodeValue);
+            target.text = currentNodeValue;
+            // this.rangeForTextChange();
+            setTimeout(() => {
+              this.rangeForTextChange();
+              // console.timeEnd("-----timer-----\n");
+            }, 3);
+            return;
+          });
+          return;
         }
       } else {
         // keydown compositionstart input keyup compositionend
         console.log("当前为连续输入模式", event.keyCode);
-        // 非直接输出模式，这时候退格键、回车键、加减、数字键将操作输入法，而不会影响已经同步了的文本,要做额外处理
-        // 这里离应该做一个功能键的列表，当他们按下的时候，不做任何操作，return false就完事
-        if (this.funcKeyInCompositeMode.indexOf(event.keyCode) !== -1) {
-          // console.log("连续输入模式下此次屏蔽的按键是", event.keyCode);
-          return false;
-        } else {
-          console.log(
-            "----------------------此时的wordKeeper----------------------",
-            this.wordKeeper
-          );
-          if (this.wordKeeper) {
-            // let currentOperateObj = this.range.commonAncestorContainer
-            //   .parentNode;
-            // 获取相应的虚拟dom的引用
-            // this.findTargetNode(currentOperateObj).then(res => {
-            //   console.log("莫非这才是正主", res);
-            //   let target = res;
-            //   console.log("正在受影响的实例", target);
-            //   let currentNodeValue = this.range.commonAncestorContainer
-            //     .nodeValue;
-            //   console.log(currentNodeValue);
-            // let startOffset = this.$store.state.prevRangeFactor.startOffset;
-            // console.log(
-            //   this.wordKeeper,
-            //   "--------预览结果------------",
-            //   currentNodeValue.substring(0, startOffset) + this.wordKeeper
-            // );
-            // console.log(
-            //   "准备工作",
-            //   this.$store.state.prevRangeFactor.startTextTankAncestor
-            // );
-            // target.text =
-            //   currentNodeValue.substring(0, startOffset) + this.wordKeeper;
-            // console.log("结束工作", target.text);
-            // this.rangeForTextChange();
-            // this.wordKeeper = "";
-            // console.log(target, this.trees);
-            // });
-            // let target = this.findTargetNode(currentOperateObj);
-          }
-        }
+        // event.stopImmediatePropagation();
+        // event.preventDefault();
+        // 非直接输出模式,这时候退格键、回车键、加减、数字键将操作输入法,而不会影响已经同步了的文本,要做额外处理
+        // 这里离应该做一个功能键的列表,当他们按下的时候,不做任何操作,return false就完事
+        // if (this.funcKeyInCompositeMode.indexOf(event.keyCode) !== -1) {
+        //   // console.log("连续输入模式下此次屏蔽的按键是", event.keyCode);
+        //   return false;
+        // } else {
+        //   console.log(
+        //     "----------------------此时的wordKeeper----------------------",
+        //     this.wordKeeper
+        //   );
+        //   if (this.wordKeeper) {
+        //     // let currentOperateObj = this.range.commonAncestorContainer
+        //     //   .parentNode;
+        //     // 获取相应的虚拟dom的引用
+        //     // this.findTargetNode(currentOperateObj).then(res => {
+        //     //   console.log("莫非这才是正主", res);
+        //     //   let target = res;
+        //     //   console.log("正在受影响的实例", target);
+        //     //   let currentNodeValue = this.range.commonAncestorContainer
+        //     //     .nodeValue;
+        //     //   console.log(currentNodeValue);
+        //     // let startOffset = this.$store.state.prevRangeFactor.startOffset;
+        //     // console.log(
+        //     //   this.wordKeeper,
+        //     //   "--------预览结果------------",
+        //     //   currentNodeValue.substring(0, startOffset) + this.wordKeeper
+        //     // );
+        //     // console.log(
+        //     //   "准备工作",
+        //     //   this.$store.state.prevRangeFactor.startTextTankAncestor
+        //     // );
+        //     // target.text =
+        //     //   currentNodeValue.substring(0, startOffset) + this.wordKeeper;
+        //     // console.log("结束工作", target.text);
+        //     // this.rangeForTextChange();
+        //     // this.wordKeeper = "";
+        //     // console.log(target, this.trees);
+        //     // });
+        //     // let target = this.findTargetNode(currentOperateObj);
+        //   }
+        // }
       }
-    },150),
+    }, 1000),
 
     /**
      * @feature
@@ -591,31 +666,21 @@ export default {
     async getGenerationTree(htmlNode) {
       // console.log("入参：", htmlNode);
       this.currentPath = [];
-      // 从数组头部加入冒泡顺序上的第一个元素节点id，这会导致最后一个也就是距离origin最近的子元素将会排在数组第一位
+      // 从数组头部加入冒泡顺序上的第一个元素节点id,这会导致最后一个也就是距离origin最近的子元素将会排在数组第一位
       this.currentPath.unshift(htmlNode.id);
       await this.getAncestorNode(htmlNode);
       console.log("获取到路径", this.currentPath);
       return await this.currentPath;
-      // return new Promise((res, rej) => {
-      //   // 重置路径准备重新检索
-
-      //   res(this.currentPath);
-      //   // rej()
-      //   console.log(rej);
-      // });
     },
-    // 从target或者range对象中获取一个dom元素，根据该元素的ID来组成访问路径
+    // 从target或者range对象中获取一个dom元素,根据该元素的ID来组成访问路径
 
     async getAncestorNode(htmlNode) {
-      // let temparr =
-
       if (htmlNode.parentNode) {
         let upgradeNode = htmlNode.parentNode;
         if (upgradeNode.id == "origin") {
           console.log("应该停下来了", upgradeNode);
           return await upgradeNode;
         } else {
-          // console.log("此次的dom元素", upgradeNode);
           // 获取这个元素节点的的父元素ID加入
           this.currentPath.unshift(upgradeNode.id);
           // console.log("递归中", this.currentPath);
@@ -624,7 +689,7 @@ export default {
       }
     },
 
-    // 当要在文档末尾插入节点时，用该方法获取文档的最末节点，所以添加需要添加在该节点之后，通过id识别
+    // 当要在文档末尾插入节点时,用该方法获取文档的最末节点,所以添加需要添加在该节点之后,通过id识别
     // 获取一个节点的最末子节点
     getDeepestNodeId(node) {
       if (node.children.length === 0) {
@@ -639,17 +704,17 @@ export default {
       console.log("回调开始", res);
       let currentposi = this.trees;
       // console.log("trees", this.trees);
-      // 生成id列表，表示新增节点落点位置的查找路径
+      // 生成id列表,表示新增节点落点位置的查找路径
       // for (let item of afterSplit) {
       //   nodeFullId = nodeFullId + item;
       //   res.push(nodeFullId);
       // }
 
       console.log("matcher", res);
-      // 通过路径获取落点容器的引用,从最外层origin的children开始查找，找到数组的倒数第二位节点作容器，即length-2的元素节点并返回
+      // 通过路径获取落点容器的引用,从最外层origin的children开始查找,找到数组的倒数第二位节点作容器,即length-2的元素节点并返回
       for (let i = 0; i < res.length; i++) {
         // console.log(
-        //   `第${i}次匹配，当前节点为：`,
+        //   `第${i}次匹配,当前节点为：`,
         //   currentposi,
         //   "匹配ID为：",
         //   res[i]
@@ -669,10 +734,10 @@ export default {
       return await currentposi;
     },
 
-    // 根据目标节点的level（可能会有重复，每层节点使用三位数标识路径，单）和id，获取落点位置的父元素target，添加到target的children之中。假设节点的level和id为['100','001','001'],为trees的children的第二个元素节点的第二个子元素节点，那么我们应该获取trees的children就够了
-    // 传入一个节点ID，获取这个节点的父节点的引用
+    // 根据目标节点的level（可能会有重复,每层节点使用三位数标识路径,单）和id,获取落点位置的父元素target,添加到target的children之中。假设节点的level和id为['100','001','001'],为trees的children的第二个元素节点的第二个子元素节点,那么我们应该获取trees的children就够了
+    // 传入一个节点ID,获取这个节点的父节点的引用
     // 节点的ID排序和节点的遍历没有关系
-    // 0129更新：入参id更改为dom元素，通过dom节点的id来获取一个访问路径，形式为数组，再通过这个数组来获取虚拟DOM的引用
+    // 0129更新：入参id更改为dom元素,通过dom节点的id来获取一个访问路径,形式为数组,再通过这个数组来获取虚拟DOM的引用
     findSupernodeById(htmlNode) {
       // let pattern = /(\d{3})/g;
       // let afterSplit = id.match(pattern);
@@ -681,17 +746,17 @@ export default {
       // console.log("回调开始", res);
       let currentposi = this.trees;
       // console.log("trees", this.trees);
-      // 生成id列表，表示新增节点落点位置的查找路径
+      // 生成id列表,表示新增节点落点位置的查找路径
       // for (let item of afterSplit) {
       //   nodeFullId = nodeFullId + item;
       //   res.push(nodeFullId);
       // }
 
       console.log("matcher", res);
-      // 通过路径获取落点容器的引用,从最外层origin的children开始查找，找到数组的倒数第二位节点作容器，即length-2的元素节点并返回
+      // 通过路径获取落点容器的引用,从最外层origin的children开始查找,找到数组的倒数第二位节点作容器,即length-2的元素节点并返回
       for (let i = 0; i < res.length - 1; i++) {
         // console.log(
-        //   `第${i}次匹配，当前节点为：`,
+        //   `第${i}次匹配,当前节点为：`,
         //   currentposi,
         //   "匹配ID为：",
         //   res[i]
@@ -714,17 +779,17 @@ export default {
       //   console.log("回调开始", res);
       //   let currentposi = this.trees;
       //   console.log('trees',this.trees)
-      //   // 生成id列表，表示新增节点落点位置的查找路径
+      //   // 生成id列表,表示新增节点落点位置的查找路径
       //   // for (let item of afterSplit) {
       //   //   nodeFullId = nodeFullId + item;
       //   //   res.push(nodeFullId);
       //   // }
 
       //   console.log("matcher", res);
-      //   // 通过路径获取落点容器的引用,从最外层origin的children开始查找，找到数组的倒数第二位节点作容器，即length-2的元素节点并返回
+      //   // 通过路径获取落点容器的引用,从最外层origin的children开始查找,找到数组的倒数第二位节点作容器,即length-2的元素节点并返回
       //   for (let i = 0; i < res.length; i++) {
       //     // console.log(
-      //     //   `第${i}次匹配，当前节点为：`,
+      //     //   `第${i}次匹配,当前节点为：`,
       //     //   currentposi,
       //     //   "匹配ID为：",
       //     //   res[i]
@@ -747,75 +812,48 @@ export default {
 
       // 初始化查找起点
     },
-    // type: 1---insert,2---add,3---newline
-    creatElementNode(type, id) {
-      // 插入某个节点之后，为保持节点ID的易识别性和唯一性，id使用时间戳，深度使用level属性
-      if (type === 1) {
-        console.log(id);
-        // this.range
-      }
-      // 添加新节点到文档最末,不涉及现有range对象的操作
-      else if (type === 2) {
-        // this.tree.children
-        // let target = this.getDeepestNodeId(this.trees);
-        // 获取到新实例的ID为 target.level*1+1
-        // console.log("fetch", target, target.level);
-        // 通过ID获取插入位置的引用
-        // let superNode = this.findSupernodeById(
-        //   this.range.commonAncestorContainer.parentNode
-        // );
-        // console.log("父节点", superNode);
-        // console.log("落点目标引用", superNode, superNode.children);
-        // 装配新节点，标签名、文本值等应该从外边传进来才对
-        // let setLevel = target.level * 1 + 1 + "";
-        // let newChild = new elementNode("span", "待测试", {}, {}, []);
-        // console.log("id", newChild.id);
-        // superNode.children.push(newChild);
-      }
-      // 另起一行
-      // else if(type===3) {
-      // 新一行，创建一个块级节点P，在其中创建一个行内节点span，添加至第二级？暂定
+    /**
+     * @featrue
+     * type=>Object
+     */
+    creatElementNode(config) {
+      // 插入某个节点之后,为保持节点ID的易识别性和唯一性,id使用时间戳
+      console.log("创建元素的配置为:", config);
+      // if (type === 1) {
+      //   // console.log(id);
+      //   // this.range
       // }
-    },
+      // 添加新节点到文档最末,不涉及现有range对象的操作
+      // else if (type === 2) {
+      //   // this.tree.children
+      //   // let target = this.getDeepestNodeId(this.trees);
+      //   // 获取到新实例的ID为 target.level*1+1
+      //   // console.log("fetch", target, target.level);
+      //   // 通过ID获取插入位置的引用
+      //   // let superNode = this.findSupernodeById(
+      //   //   this.range.commonAncestorContainer.parentNode
+      //   // );
+      //   // console.log("父节点", superNode);
+      //   // console.log("落点目标引用", superNode, superNode.children);
+      //   // 装配新节点,标签名、文本值等应该从外边传进来才对
+      //   // let setLevel = target.level * 1 + 1 + "";
+      //   // let newChild = new elementNode("span", "待测试", {}, {}, []);
+      //   // console.log("id", newChild.id);
+      //   // superNode.children.push(newChild);
+      // }
 
-    // isObject(value) {
-    //   const type = typeof value;
-    //   return value != null && (type == "object" || type == "function");
-    // },
-    // deepClone(obj, hash = new WeakMap()) {
-    //   if (null == obj || "object" != typeof obj) return obj;
-    //   let cloneObj;
-    //   let Constructor = obj.constructor;
-    //   console.log(1, Constructor);
-    //   switch (Constructor) {
-    //     case RegExp:
-    //       cloneObj = new Constructor(obj);
-    //       break;
-    //     case Date:
-    //       cloneObj = new Constructor(obj.getTime());
-    //       break;
-    //     default:
-    //       if (hash.has(obj)) return hash.get(obj);
-    //       cloneObj = new Constructor();
-    //       hash.set(obj, cloneObj);
-    //       console.log(2, hash.get(obj));
-    //   }
-    //   for (let key in obj) {
-    //     console.log(3, key, cloneObj);
-    //     cloneObj[key] = this.isObject(obj[key])
-    //       ? this.deepClone(obj[key], hash)
-    //       : obj[key];
-    //     console.log(4, key, cloneObj[key]);
-    //   }
-    //   return cloneObj;
-    // },
-    // 20200218添加补正参数startOffsetChange和endOffsetChange，用于在直接输入和输入法输入包括剪切粘贴的时候，把range调整到合理的位置
+      // 新一行,创建一个块级节点P,在其中创建一个行内节点span,添加至第二级？暂定
+      // else if(type===3) {
+
+      // };
+    },
+    // 20200218添加补正参数startOffsetChange和endOffsetChange,用于在直接输入和输入法输入包括剪切粘贴的时候,把range调整到合理的位置
     rangeForTextChange(offsetFluctuation = 0) {
       let rangeAfter = this.$store.state.prevRangeFactor;
       console.log("rangeAfter", rangeAfter);
       let selection = window.getSelection();
       let newRange = document.createRange();
-      // // range对象，通常是this.range
+      // // range对象,通常是this.range
 
       // 20200212,通过id获取文本节点的父元素节点
       let startTextTankAncestor = document.getElementById(
@@ -838,31 +876,7 @@ export default {
       selection.removeAllRanges();
       selection.addRange(newRange);
 
-      console.timeEnd("-----------------timer--------------------");
-    },
-
-    // 在进行文字修饰之前,选回range,但考虑到好像很少会使用execCommand,所以好像没必要
-    selectBack(range) {
-      // console.log('begin',window.getSelection())
-      console.log("range入参", range);
-      // let result =  document.execCommand('FormatBlock',false,'<h1>');
-      return new Promise(res => {
-        let selection = window.getSelection();
-        selection.removeAllRanges();
-
-        let range = document.createRange();
-        // range对象，通常是this.range
-        range.setStart(range.startContainer, range.startOffset);
-
-        range.setEnd(range.endContainer, range.endOffset);
-
-        selection.addRange(range);
-        // this.$refs.wysiwys.focus();
-        res();
-      });
-
-      // let result =  document.execCommand('FormatBlock',false,'<h1>');
-      // console.log('result',result)
+      // console.timeEnd("-----------------timer--------------------");
     },
 
     // 保存range要素至data和vuex
@@ -882,21 +896,6 @@ export default {
         });
         console.log(this.$store.state.prevRangeFactor);
       }
-    },
-
-    // 获取光标所在节点
-    // 临时测试：文本末尾添加新元素
-
-    getTargetNode() {
-      //
-      console.log("当前节点", event.target);
-
-      this.range = window.getSelection().getRangeAt(0);
-      console.log(this.range);
-      this.creatElementNode(2);
-
-      // 向上发送光标所在节点
-      // this.$emit("focusOffsetChange", event.target);
     }
   }
 };

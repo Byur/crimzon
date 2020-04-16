@@ -158,7 +158,7 @@
 </template>
 <script>
 // import ArrayBox from "./components/ArrayBox";
-let _ = require('lodash')
+let _ = require("lodash");
 export default {
   name: "AboutForms",
   components: {
@@ -242,13 +242,12 @@ export default {
     // }
   },
   methods: {
-
-    testDebounce:_.debounce(function(){
-      console.error('我着火了')
-      this.testfunc()
-    },500),
+    testDebounce: _.debounce(function() {
+      console.error("我着火了");
+      this.testfunc();
+    }, 500),
     testfunc() {
-      console.log(this.$refs.textarea.value)
+      console.log(this.$refs.textarea.value);
     },
 
     acceptCM() {
