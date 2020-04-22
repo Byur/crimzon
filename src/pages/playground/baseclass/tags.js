@@ -1,20 +1,20 @@
 // 单标签列表
 const singelTagList = ["br", "img"];
-export default class elementNode {
+export default class ElementNode {
   // except:
   // tag-String
   // text-String
   // attr-Object
   // decoration-Object
   // children-Array
-  constructor(tag, text, attr, style, children, dispaly = true) {
+  constructor(tag, text, attr, style, children) {
     let now = new Date();
     this.tag = tag || "";
     this.text = text || "";
     this.attr = attr || {};
     this.style = style || {};
     this.children = children || [];
-    this.display = dispaly;
+    // this.display = dispaly;
     // 唯一标识，用于在同一级数中识别自身
     this.id = "z" + now.getTime();
     // 用于区别节点深度和获取引用的路径，可重复
@@ -25,7 +25,7 @@ export default class elementNode {
   //   console.log("改变了吗", value);
   // }
   toString() {
-    this.attr.id = this.id;
+    // this.attr.id = this.id;
     let formatStyle = "";
     for (let i in this.style) {
       formatStyle = formatStyle + `${i}:${this.style[i]};`;
@@ -40,15 +40,15 @@ export default class elementNode {
     if (singelTagList.indexOf(this.tag) === -1) {
       const head = `<${this.tag}${
         formatStyle ? "style=" + formatStyle : ""
-      } ${formatAttr}>`;
+      } ${formatAttr} id=${this.id}>`;
       const tail = `</${this.tag}>`;
       if (this.children.length === 0) {
         return head + this.text + tail;
       } else {
-        let filterenable = this.children.filter(item => {
-          return item.display === true;
-        });
-        let innerHTML = filterenable.reduce(function(prev, cur) {
+        // let filterenable = this.children.filter(item => {
+        //   return item.display === true;
+        // });
+        let innerHTML = this.children.reduce(function(prev, cur) {
           return prev + cur;
         });
         return head + innerHTML + tail;

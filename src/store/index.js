@@ -11,7 +11,7 @@ export default new Vuex.Store({
   },
   mutations: {
     saveRangeBeforeTextChange(state, params) {
-      console.log("我开始了", params.rangeFactor);
+      console.log("存入store的range参数", params.rangeFactor);
       state.prevRangeFactor = params.rangeFactor;
     },
     savePreTextNodeLength(state, param) {

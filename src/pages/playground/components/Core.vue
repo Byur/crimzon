@@ -18,7 +18,7 @@
   </div>
 </template>
 <script>
-import elementNode from "../baseclass/tags";
+import ElementNode from "../baseclass/tags";
 let _ = require("lodash");
 export default {
   // @mouseleave="checkRange"
@@ -26,7 +26,7 @@ export default {
   // @mouseup="getTarget"
   created() {
     // this.range =
-    let origin = new elementNode(
+    let origin = new ElementNode(
       "div",
       "",
       // "origin",
@@ -35,8 +35,8 @@ export default {
       []
     );
     origin.id = "origin";
-    let newPara = new elementNode("p", "", {}, {}, []);
-    // let newinlineseed = new elementNode(
+    let newPara = new ElementNode("p", "", {}, {}, []);
+    // let newinlineseed = new ElementNode(
     //   "span",
     //   "...",
     //   "100000000",
@@ -45,7 +45,7 @@ export default {
     //   [],
     // );
     setTimeout(() => {
-      let newinlineEle = new elementNode("span", "1234567", {}, {}, []);
+      let newinlineEle = new ElementNode("span", "1234567", {}, {}, []);
       newPara.children = [newinlineEle];
       origin.children.push(newPara);
       this.trees = origin;
@@ -63,10 +63,7 @@ export default {
         border: ""
       },
       // 预选色盘,暂时弃用
-      colorBar:[
-
-      ],
-      
+      colorBar: [],
 
       // 20200404,追加输入锁,在连续输入（使用输入法）转为直接输入一段时间之内,按键事件所触发的输入事件无效。
       // 输入锁：this.directInput由false转为true时,
@@ -105,6 +102,7 @@ export default {
         144,
         9,
         12,
+        13,
         16,
         17,
         18,
@@ -384,6 +382,7 @@ export default {
     exectionRestricting() {
       if (this.directInput) {
         // 退格限制
+
         if (event.keyCode === 8) {
           this.saveRange();
           if (
@@ -398,7 +397,123 @@ export default {
         }
         // 回车
         else if (event.keyCode === 13) {
+          this.saveRange();
+          console.log("当前range", this.range);
+          // if (!this.range) {
+          //   console.log('此时range不存在')
+          //   this.saveRange();
+          // }
           // 一般情况下,在trees的children之下增加一个p类型的新节点
+          // 判断场景:
+          // console.log(
+          //   "当前range",
+          //   this.range,
+          //   this.range.startContainer === this.range.endContainer
+          // );
+          const inSameTextNode =
+            this.range.startContainer === this.range.endContainer;
+          // 起点和终点在同一个节点之内
+          if (inSameTextNode) {
+            // 如果this.range.commonAncestorContainer的节点类型为text(nodeType===3),则证明当前是一个文本节点,使用他的父节点parentNode作为currentObject;如果不是文本节点,则证明有可能发生了跨节点选取或者P级元素中存在span的元素节点和对应的文本节点
+            const currentOperateObj =
+              this.range.commonAncestorContainer.nodeType === 3
+                ? this.range.commonAncestorContainer.parentNode
+                : this.range.commonAncestorContainer;
+            // 获取相应的虚拟dom的引用
+            this.findTargetNode(currentOperateObj).then(res => {
+              const target = res;
+              console.log("正在受影响的实例", target);
+              // 被分割的前后两部分的文本
+              const partAText = target.text.substr(0, this.range.startOffset);
+              console.log("partAText", partAText);
+              const partBText = target.text.substr(
+                this.range.endOffset,
+                target.text.length
+              );
+              // 获取事件触发时焦点所在的P级节点,不存在range.commonAncestorContainer在span中,只可能会在text或者p
+              const paraNode =
+                this.range.commonAncestorContainer.nodeType === 3
+                  ? this.range.commonAncestorContainer.parentNode.parentNode
+                  : this.range.commonAncestorContainer;
+              console.log("paraNode", paraNode.id);
+              console.log("partBText", partBText);
+              // 通过partA/partB的内容长度,来判断换行时的range是在文本节点的开端还是末尾
+              // if (partAText){
+              //   target.text = partAText;
+              // }
+              // console.log(partBText);
+
+              // 找到paraNode在trees中的索引
+              let insertIndex = null;
+              // 如果partAText不存在,则认为是在文本节点的开端进行换行,则新创建一个P级元素,插在target所属的P元素之前,否则插在P元素之后
+              if (partAText) {
+                target.text = partAText;
+                const partBContainer = new ElementNode();
+                partBContainer.tag = target.tag;
+                // partBContainer.attr.id = partBContainer.id;
+                partBContainer.text = partBText;
+                partBContainer.style = target.style;
+                partBContainer.children = target.children;
+                console.log("新的容器", partBContainer);
+
+                // 当inSameTextNode时,commonAncestorContainer必为文本节点,向上推两级,可得到P级节点
+                // if (this.range.commonAncestorContainer==='text'){
+                // }
+
+                insertIndex =
+                  this.trees.children.findIndex(item => {
+                    return item.id === paraNode.id;
+                  }) + 1;
+                console.log("insertIndex", insertIndex);
+                // 组装新一行的元素节点
+                const newPara = new ElementNode("p");
+                const br = new ElementNode("br");
+                if (partBContainer.text) {
+                  newPara.children.push(partBContainer);
+                } else {
+                  console.log("空状态下,新一行");
+                  newPara.children.push(br);
+                }
+                console.log("newPara", newPara, br.toString());
+                this.trees.children.splice(insertIndex, 0, newPara);
+              } else {
+                insertIndex = this.trees.children.findIndex(item => {
+                  return item.id === paraNode.id;
+                });
+                const newPara = new ElementNode("p");
+                const br = new ElementNode("br");
+                newPara.children.push(br);
+                this.trees.children.splice(insertIndex, 0, newPara);
+
+                this.$store.commit("saveRangeBeforeTextChange", {
+                  rangeFactor: {
+                    startTextTankAncestor: document.getElementById(paraNode.id),
+                    startOffset: 0,
+                    endTextTankAncestor: document.getElementById(paraNode.id),
+                    endOffset: 0
+                  }
+                });
+                setTimeout(() => {
+                  this.rangeForTextChange();
+                }, 3);
+                console.log("insertIndex", insertIndex);
+                // 设置range
+                // this.$store.commit("saveRangeBeforeTextChange", {
+                //   rangeFactor: {
+                //     startTextTankAncestor: window.getSelection().getRangeAt(0)
+                //       .startContainer.parentNode,
+                //     startOffset: window.getSelection().getRangeAt(0).startOffset,
+                //     endTextTankAncestor: window.getSelection().getRangeAt(0)
+                //       .endContainer.parentNode,
+                //     endOffset: window.getSelection().getRangeAt(0).endOffset
+                //   }
+                // });
+              }
+            });
+          }
+          // 阻止传播
+          event.stopImmediatePropagation();
+          event.preventDefault();
         }
       }
     },
@@ -470,7 +585,7 @@ export default {
        * @readonly
        * 文本更新之后导致的视图刷新之后range位置重置,将当前焦点的range对象部分参数存入状态管理,然后在删除文本之后取出,新建一个range对象插回
        */
-      console.log("事件对象", event, this.directInput);
+      // console.log("事件对象", event, this.directInput);
       // this.range = window.getSelection().getRangeAt(0);
       // this.$store.commit("saveRangeBeforeTextChange", {
       //   rangeFactor: {
@@ -594,10 +709,28 @@ export default {
           this.saveRange();
           console.log("keyup时刻的range", this.$store.state.prevRangeFactor);
           let currentOperateObj = this.range.commonAncestorContainer.parentNode;
+          // 0419有一个问题在于,当一个P级元素删除晚全部文本后,确实是会留下一个br站位保持换行,但是在此基础上新添加的文本是不在span标签中的,因而会对后续的trees造成影响,因此在这里追加一个判断,当currentOperateObj不为span时,创造一个span添加到P里
           // 获取相应的虚拟dom的引用
           this.findTargetNode(currentOperateObj).then(res => {
+            // 若res不是个用于装载文本的节点,他将会是个P级节点,由上一个注释可知,在P级节点中编辑文本,重排时依然会保留用于占位的br节点,因此在下面做了一个判断,当p级节点但只有一个子节点并且这个节点为br时,将删除这个节点并且新增一个span节点手动插入
+            console.log("-----------按键松开后的range所在的父级元素节点", res);
+            if (res.tag !== "span") {
+              if (res.children.length === 1 && res.children[0].tag === "br") {
+                res.children.pop();
+              }
+              const span = new ElementNode(
+                "span",
+                this.range.commonAncestorContainer.nodeValue
+              );
+              res.children.push(span);
+              setTimeout(() => {
+                this.rangeForTextChange();
+                // console.timeEnd("-----timer-----\n");
+              }, 5);
+              return;
+            }
             let target = res;
-            console.log("正在受影响的实例", target);
+            // console.log("正在受影响的实例", target);
             let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
             // console.error("--------修改值---------", currentNodeValue);
             target.text = currentNodeValue;
@@ -837,7 +970,7 @@ export default {
       //   // console.log("落点目标引用", superNode, superNode.children);
       //   // 装配新节点,标签名、文本值等应该从外边传进来才对
       //   // let setLevel = target.level * 1 + 1 + "";
-      //   // let newChild = new elementNode("span", "待测试", {}, {}, []);
+      //   // let newChild = new ElementNode("span", "待测试", {}, {}, []);
       //   // console.log("id", newChild.id);
       //   // superNode.children.push(newChild);
       // }
@@ -901,12 +1034,16 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-#theGhost {
-  text-align: left;
-  word-wrap: break-word;
-  p {
-    width: 100%;
+.container {
+  #theGhost {
+    padding: 10px;
+    min-height: 500px;
+    text-align: left;
     word-wrap: break-word;
+    p {
+      width: 100%;
+      word-wrap: break-word;
+    }
   }
 }
 </style>
