@@ -3,19 +3,16 @@
   <div class="editWords">
     <div class="shell">
       <div class="of">
-
-
-
         <editor
           @input="getInnerHTML"
           @focusOffsetChange="takeYourComfort"
           :innerText="haveyourself"
           ref="editor"
         ></editor>
-        <button click='addAnLetter'>llllllllllick</button>
+        <!-- <button click='addAnLetter'>llllllllllick</button>
         <div id="letterbox" contenteditable>
 
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -28,14 +25,14 @@ export default {
     editor
   },
   created() {
-    // let range = document.createRange();
-    // console.log("onload", range);
-      const letterbox = document.getElementById('letterbox')
-      letterbox.innerHTML = '<h1>喂喂喂?</h1>'
+    // const ele1 = new elementNode('span','第一个元素')
+    // console.log(ele1)
+    // setTimeout(()=>{
+    //   const ele2 = new elementNode('span','第二个元素')
+    //   console.log(ele2)
+    // })
   },
-  mounted() {
-
-  },
+  mounted() {},
   watch: {
     richEditor: {
       handler(val) {
@@ -71,13 +68,13 @@ export default {
     },
     getInnerHTML(range) {
       console.log("oninput", range, this.$refs.editor);
-    },
+    }
 
     // temptest
-    addAnLetter(){
-      const letterbox = document.getElementById('letterbox')
-      letterbox.innerText += 'A'
-    }
+    // addAnLetter(){
+    //   const letterbox = document.getElementById('letterbox')
+    //   letterbox.innerText += 'A'
+    // }
   }
 };
 </script>

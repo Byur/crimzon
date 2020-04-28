@@ -8,7 +8,7 @@ export default class ElementNode {
   // decoration-Object
   // children-Array
   constructor(tag, text, attr, style, children) {
-    let now = new Date();
+    // let now = new Date();
     this.tag = tag || "";
     this.text = text || "";
     this.attr = attr || {};
@@ -16,7 +16,8 @@ export default class ElementNode {
     this.children = children || [];
     // this.display = dispaly;
     // 唯一标识，用于在同一级数中识别自身
-    this.id = "z" + now.getTime();
+    this.id = "z" + new Date().getTime();
+    this.parent = null;
     // 用于区别节点深度和获取引用的路径，可重复
     // this.level = level;
   }
@@ -54,9 +55,7 @@ export default class ElementNode {
         return head + innerHTML + tail;
       }
     } else {
-      const theRudeConstructor = `<${this.tag}${
-        formatStyle ? "style=" + formatStyle : ""
-      } ${formatAttr}/>`;
+      const theRudeConstructor = `<${this.tag}${formatStyle ? "style=" + formatStyle : ""}${formatAttr || ""}/>`;
       return theRudeConstructor;
     }
   }
