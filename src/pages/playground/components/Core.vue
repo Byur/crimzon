@@ -550,6 +550,7 @@ export default {
                   this.redirectRange(id);
                   console.log("insertIndex", insertIndex);
                 }, 0);
+                return;
               } else {
                 console.log("partAText无内容");
                 insertIndex = this.trees.children.findIndex(item => {
@@ -564,9 +565,13 @@ export default {
                 // 0424 追加父节点属性parent
                 newPara.parent = this.trees;
                 this.trees.children.splice(insertIndex, 0, newPara);
-
-                this.redirectRange(paraNode.id);
-                console.log("insertIndex", insertIndex);
+                setTimeout(() => {
+                  // const id = newPara.children[0]?newPara.children[0].id:newPara.id
+                  const id = paraNode.id;
+                  this.redirectRange(id);
+                  console.log("insertIndex", insertIndex);
+                }, 0);
+                return;
               }
             });
           } else {
@@ -619,11 +624,12 @@ export default {
                   const textBIndex = endPara.children.findIndex(item => {
                     return this.range.endContainer.parentNode.id === item.id;
                   });
+                  // 获取endContainer所属的span在所属的P节点中的index,在此index之前的节点全部弃置
                   endPara.children = endPara.children.slice(textBIndex);
                   endPara.children[0].text = textB;
                   console.log(startParaIndex, endParaIndex);
 
-                  this.trees.children[endParaIndex];
+                  // this.trees.children[endParaIndex];
                   // const restStartIndex = target.parent.children.findIndex(
                   //   item => {
                   //     return this.range.endContainer.parentNode.id === item.id;
@@ -635,10 +641,20 @@ export default {
                       item.children = [];
                     }
                   });
-
-                  this.redirectRange(endPara.id);
-
-
+                  // const newPara = new ElementNode("p");
+                  // const br = new ElementNode("br");
+                  // br.parent = newPara;
+                  // newPara.parent = this.trees;
+                  // newPara.children.push(br);
+                  // this.trees.children.splice(endParaIndex, 0, newPara);
+                  // 焦点重定向到结束段落的endOffset,在end节点之前的文本弃置
+                  // this.redirectRange(endPara.id);
+                  setTimeout(() => {
+                    // const id = newPara.children[0]?newPara.children[0].  id:newPara.id
+                    const id = endPara.id;
+                    this.redirectRange(id);
+                    console.log("insertIndex", insertIndex);
+                  }, 0);
                 }
               });
               return;
@@ -727,6 +743,61 @@ export default {
               });
               return;
             }
+            // 空行时进行换行操作,会导致start/end/commonAncestorContainer都为P,且start/endOffset为0;此时的startContainer等于endContainer
+            if (
+              this.range.commonAncestorContainer.tagName === "P" &&
+              this.range.startContainer === this.range.endContainer
+            ) {
+              insertIndex =
+                this.trees.children.findIndex(item => {
+                  return item.id === this.range.commonAncestorContainer.id;
+                }) + 1;
+              console.log("空行1", insertIndex);
+              const newPara = new ElementNode("p");
+              const br = new ElementNode("br");
+              // 0424 追加父节点属性parent
+              br.parent = newPara;
+              newPara.children.push(br);
+              console.log("即将插入", newPara);
+              // 0424 追加父节点属性parent
+              newPara.parent = this.trees;
+              this.trees.children.splice(insertIndex, 0, newPara);
+              console.log(this.trees.children);
+              console.log(newPara);
+              setTimeout(() => {
+                // const id = newPara.children[0]?newPara.children[0].id:newPara.id
+                const id = newPara.id;
+                this.redirectRange(id);
+                console.log("insertIndex", insertIndex);
+              }, 0);
+              return;
+            }
+            if (this.range.commonAncestorContainer.tagName === "BR") {
+              console.log("空行2");
+              insertIndex =
+                this.trees.children.findIndex(item => {
+                  return (
+                    item.id === this.range.commonAncestorContainer.parentNode.id
+                  );
+                }) + 1;
+              const newPara = new ElementNode("p");
+              const br = new ElementNode("br");
+              // 0424 追加父节点属性parent
+              br.parent = newPara;
+              newPara.children.push(br);
+              console.log("即将插入", newPara);
+              // 0424 追加父节点属性parent
+              newPara.parent = this.trees;
+              this.trees.children.splice(insertIndex, 0, newPara);
+              console.log(this.trees.children);
+              setTimeout(() => {
+                // const id = newPara.children[0]?newPara.children[0].id:newPara.id
+                const id = newPara.id;
+                this.redirectRange(id);
+                console.log("insertIndex", insertIndex);
+              }, 0);
+              return;
+            }
             // 本来可以是跨textNode选取,但因为规则,一个span中只能有一个textNode,因此,这种场景只会出现在焦点位于文本节点最前端,此时浏览器识别range的container和offset,是以text前一个节点为基准的,同理;当一个P级中包含多个span时,使焦点位于两个span之间,此时的container和offset,是前一个span和span中text的长度;这种场景,需要
             if (this.range.commonAncestorContainer.tagName === "SPAN") {
               console.log("跨text选取");
@@ -750,8 +821,12 @@ export default {
                 newPara.parent = this.trees;
                 this.trees.children.splice(insertIndex, 0, newPara);
 
-                this.redirectRange(paraNode.id);
-                console.log("insertIndex", insertIndex);
+                setTimeout(() => {
+                  // const id = newPara.children[0]?newPara.children[0].id:newPara.id
+                  const id = paraNode.id;
+                  this.redirectRange(id);
+                  console.log("insertIndex", insertIndex);
+                }, 0);
               });
               return;
             }
@@ -1044,7 +1119,7 @@ export default {
      * @feature
      */
     redirectRange(id, offset = 0) {
-      console.log("设置指定range");
+      console.log("设置指定range", id);
       this.$store.commit("saveRangeBeforeTextChange", {
         rangeFactor: {
           startTextTankAncestor: document.getElementById(id),
