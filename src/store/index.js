@@ -17,7 +17,7 @@ export default new Vuex.Store({
     normalStack: [],
     historyStack: [],
     // assign an variable, to solve vuex's mutations can not return a value to an outside vue-instance
-    undoTop: []
+    undoTop: {},
   },
   // getters: {
   //   normalundoTop: state => {
@@ -39,16 +39,19 @@ export default new Vuex.Store({
     // stackHandler
     actionUndo(state) {
       console.log("beforeUndo", state.normalStack);
+      let top = null;
       // 当normalStack长度为1时,此时是初始化的状态,如果再删除,会导致pop出空,这就是为什么点击redo或者undo有时候不生效的原因,为了不让他返回空,在这里加一个限制
-      if (state.normalStack.length > 0) {
-        const top = state.normalStack.pop();
-        state.undoTop = top;
-        state.historyStack.push(top);
+      if (state.normalStack.length > 1) {
+        state.historyStack.push(state.normalStack.pop());
+        top = _.last(state.normalStack)
+        console.log('top',top)
         console.log("afterUndo------------normalStack", state.normalStack);
         console.log("afterUndo------------historyStack", state.historyStack);
-        return;
+      } else {
+        top = state.normalStack[0];
+        console.log("undo栈pop限制");
       }
-      console.log("undo栈pop限制");
+      state.undoTop = top;
       return;
     },
     actionRedo(state) {

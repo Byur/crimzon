@@ -21,7 +21,7 @@ export function getStack(action) {
   } else {
     console.log("redo");
     this.$store.commit("actionRedo");
-    let currentStack = this.$store.state.historyStack;
+    let currentStack = this.$store.state.normalStack;
     const topAfterRedo = _.last(currentStack);
     console.log("topAfterRedo", topAfterRedo);
     if (topAfterRedo) {

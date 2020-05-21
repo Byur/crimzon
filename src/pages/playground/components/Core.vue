@@ -362,14 +362,6 @@ export default {
               currentRange.endOffset,
               currentRange.commonAncestorContainer.nodeValue.length
             );
-            this.saveStack({
-              startId: currentRange.startContainer.parentNode.id,
-              startOffset: partAText.length,
-              endId: currentRange.endContainer.parentNode.id,
-              endOffset: partAText.length
-            });
-            // console.log("partBText", partBText);
-
             if (event.keyCode === 8) {
               event.stopImmediatePropagation();
               event.preventDefault();
@@ -397,6 +389,12 @@ export default {
                       startOffset: partAText.length - 1,
                       endId: id,
                       endOffset: partAText.length - 1
+                    });
+                    this.saveStack({
+                      startId: currentRange.startContainer.parentNode.id,
+                      startOffset: partAText.length,
+                      endId: currentRange.endContainer.parentNode.id,
+                      endOffset: partAText.length
                     });
                   });
                   return;
@@ -1384,12 +1382,12 @@ export default {
           newinlineEle.parent = newPara.id;
           newPara.children.push(newinlineEle);
 
-          // this.saveStack({
-          //   startId: newinlineEle.id,
-          //   startOffset: newinlineEle.text.length,
-          //   endId: newinlineEle.id,
-          //   endOffset: newinlineEle.text.length
-          // });
+          this.saveStack({
+            startId: newinlineEle.id,
+            startOffset: newinlineEle.text.length,
+            endId: newinlineEle.id,
+            endOffset: newinlineEle.text.length
+          });
         }, 0);
       }, 0);
     },
