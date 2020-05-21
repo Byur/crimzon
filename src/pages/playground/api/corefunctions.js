@@ -1,9 +1,9 @@
 // 保存range要素至data和vuex
-export function saveRange() {
+export function saveRange(store) {
   if (window.getSelection().getRangeAt(0)) {
-    this.range = window.getSelection().getRangeAt(0);
+    // this.range = window.getSelection().getRangeAt(0);
     // console.log("saved", this.range);
-    this.$store.commit("saveRangeBeforeTextChange", {
+    store.commit("saveRangeBeforeTextChange", {
       rangeFactor: {
         startTextTankAncestor: window.getSelection().getRangeAt(0)
           .startContainer.parentNode,
@@ -13,12 +13,11 @@ export function saveRange() {
         endOffset: window.getSelection().getRangeAt(0).endOffset
       }
     });
-    // console.log(this.$store.state.prevRangeFactor);
   }
 }
 // 20200218添加补正参数startOffsetChange和endOffsetChange,用于在直接输入和输入法输入包括剪切粘贴的时候,把range调整到合理的位置
-export function rangeForTextChange(offsetFluctuation = 0) {
-  let rangeAfter = this.$store.state.prevRangeFactor;
+export function rangeForTextChange(store, offsetFluctuation = 0) {
+  let rangeAfter = store.state.prevRangeFactor;
   console.log("rangeAfter", rangeAfter);
   let selection = window.getSelection();
   let newRange = document.createRange();
@@ -44,7 +43,21 @@ export function rangeForTextChange(offsetFluctuation = 0) {
 
   // console.timeEnd("-----------------timer--------------------");
 }
-
+export function redirectRange(store, forNewRange) {
+  console.log("设置指定range", forNewRange.startId);
+  console.log(document.getElementById(forNewRange.startId));
+  store.commit("saveRangeBeforeTextChange", {
+    rangeFactor: {
+      startTextTankAncestor: document.getElementById(forNewRange.startId),
+      startOffset: forNewRange.startOffset || 0,
+      endTextTankAncestor: document.getElementById(forNewRange.endId),
+      endOffset: forNewRange.endOffset || 0
+    }
+  });
+  setTimeout(() => {
+    rangeForTextChange(store);
+  }, 3);
+}
 // 每次遍历节点的路径
 let currentPath = [];
 async function getAncestorNode(htmlNode) {
@@ -71,11 +84,11 @@ async function getGenerationTree(htmlNode) {
   return await currentPath;
 }
 
-export async function findTargetNode(htmlNode) {
+export async function findTargetNode(htmlNode, trees) {
   let res = await getGenerationTree(htmlNode);
   console.log("回调开始", res);
-  let currentposi = this.trees;
-  // console.log("trees", this.trees);
+  let currentposi = trees;
+  // console.log("trees", trees);
   // 生成id列表,表示新增节点落点位置的查找路径
   // for (let item of afterSplit) {
   //   nodeFullId = nodeFullId + item;

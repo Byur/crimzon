@@ -2,10 +2,16 @@
   <div class="container">
     <div class="toolbar_simple">
       <div class="cell">
-        <i class="iconfont icon icon-ziyuan1" @click="getStack('undo')"></i>
+        <i
+          class="iconfont icon icon-ziyuan1"
+          @click="getStack(trees, $store, 'undo')"
+        ></i>
       </div>
       <div class="cell">
-        <i class="iconfont icon icon-ziyuan" @click="getStack('redo')"></i>
+        <i
+          class="iconfont icon icon-ziyuan"
+          @click="getStack(trees, $store, 'redo')"
+        ></i>
       </div>
     </div>
     <div class="toolbar_fullpower"></div>
@@ -28,11 +34,11 @@
 <script>
 import ElementNode from "../baseclass/tags";
 import {
-  saveRange,
+  // saveRange,
   rangeForTextChange,
   findTargetNode
 } from "../api/corefunctions";
-// import { backspace } from '../api/handleEventsByScene'
+import { backspace } from "../api/handleEventsByScene";
 import { getStack, saveStack } from "../api/stack";
 let _ = require("lodash");
 export default {
@@ -40,10 +46,13 @@ export default {
   // @mousedown="getTarget"
   // @mouseup="getTarget"
   async created() {
+    this.store = this.$store;
     this.init();
   },
   data() {
     return {
+      // 0521抽象化进程:将外部api文件中的this脱出
+      store: {},
       // 20200416,开始插入toolbar概念,追加安静制图机,首先提供的参数效果不能互相覆盖,经整理,只修改样式,不对布局(指视觉上的,实际上只要影响了range,都会造成布局改变)造成影响的可修改项目前有:粗体(fontweight),斜体(italic),删除线(through-line),下划线(underline),突出(bgc),颜色(color),字号(fontsize),边框(border),上下标(vertical-align:super/sub),字体,格式刷,清除格式;
       theSilentCartoGrapher: {
         // 字体颜色
@@ -256,7 +265,7 @@ export default {
   },
   // computed: {
   //   rangeAfter(){
-  //     return this.$store.state.
+  //     return this.store.state.
   //   }
   // },
   methods: {
@@ -284,7 +293,7 @@ export default {
         // console.log("正在受影响的实例", target);
         let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
         console.log(currentNodeValue);
-        let startOffset = this.$store.state.prevRangeFactor.startOffset;
+        let startOffset = this.store.state.prevRangeFactor.startOffset;
         console.log(
           this.wordKeeper,
           "--------预览结果------------",
@@ -292,7 +301,7 @@ export default {
         );
         console.log(
           "准备工作",
-          this.$store.state.prevRangeFactor.startTextTankAncestor
+          this.store.state.prevRangeFactor.startTextTankAncestor
         );
         console.log(window.getSelection().getRangeAt(0));
         this.saveRange();
@@ -353,157 +362,168 @@ export default {
           // currentRange.commonAncestorContainer.nodeType === 3应该是覆盖了所有的场景,但还不确定
           if (currentRange.commonAncestorContainer.nodeType === 3) {
             // 被焦点分割的前后两部分文本
-            const partAText = currentRange.commonAncestorContainer.nodeValue.substr(
-              0,
-              currentRange.startOffset
-            );
-            // console.log("partAText", partAText);
-            const partBText = currentRange.commonAncestorContainer.nodeValue.substr(
-              currentRange.endOffset,
-              currentRange.commonAncestorContainer.nodeValue.length
-            );
+
             if (event.keyCode === 8) {
-              event.stopImmediatePropagation();
-              event.preventDefault();
-              const currentOperateObj =
-                currentRange.commonAncestorContainer.parentNode;
-              // 获取相应的虚拟dom的引用
-              this.findTargetNode(currentOperateObj).then(async res => {
-                const target = res;
+              backspace.scenePointMode(currentRange, this.trees, this.$store);
+              // const partAText = currentRange.commonAncestorContainer.nodeValue.substr(
+              //   0,
+              //   currentRange.startOffset
+              // );
+              // // console.log("partAText", partAText);
+              // const partBText = currentRange.commonAncestorContainer.nodeValue.substr(
+              //   currentRange.endOffset,
+              //   currentRange.commonAncestorContainer.nodeValue.length
+              // );
+              // event.stopImmediatePropagation();
+              // event.preventDefault();
+              // const currentOperateObj =
+              //   currentRange.commonAncestorContainer.parentNode;
+              // // 获取相应的虚拟dom的引用
+              // this.findTargetNode(currentOperateObj).then(async res => {
+              //   const target = res;
 
-                if (partAText.length > 1) {
-                  target.text =
-                    partAText.substring(0, partAText.length - 1) + partBText;
-                  // console.log(
-                  //   "删除之后",
-                  //   partAText.substring(0, partAText.length - 1),
-                  //   "|",
-                  //   partBText,
-                  //   "|",
-                  //   target.text
-                  // );
-                  setTimeout(() => {
-                    const id = target.id;
-                    this.redirectRange({
-                      startId: id,
-                      startOffset: partAText.length - 1,
-                      endId: id,
-                      endOffset: partAText.length - 1
-                    });
-                    this.saveStack({
-                      startId: currentRange.startContainer.parentNode.id,
-                      startOffset: partAText.length,
-                      endId: currentRange.endContainer.parentNode.id,
-                      endOffset: partAText.length
-                    });
-                  });
-                  return;
-                } else {
-                  /**
-                   * 如果partAtext.length===0,那么会有一下几种情况:
-                   * 1 paraIndex===0,targetIndex==0;此时如果partAtext不存在,那么就证明这里是文本的顶端了,再次触发事件时,需要阻止删除行为
-                   * 2 paraIndex!==0,也就是>0,targetIndex==0,此时partAtext,则退回上一个P节点,使用最后一位的span节点的最后一位offset作为新range
-                   * 3 targetIndex!==0,常规删除行为,使用targetIndex-1的span节点以及text的长度创建新range;
-                   */
+              //   if (partAText.length > 1) {
+              //     target.text =
+              //       partAText.substring(0, partAText.length - 1) + partBText;
+              //     // console.log(
+              //     //   "删除之后",
+              //     //   partAText.substring(0, partAText.length - 1),
+              //     //   "|",
+              //     //   partBText,
+              //     //   "|",
+              //     //   target.text
+              //     // );
+              //     setTimeout(() => {
+              //       const id = target.id;
+              //       this.redirectRange({
+              //         startId: id,
+              //         startOffset: partAText.length - 1,
+              //         endId: id,
+              //         endOffset: partAText.length - 1
+              //       });
+              //       this.saveStack({
+              //         startId: currentRange.startContainer.parentNode.id,
+              //         startOffset: partAText.length,
+              //         endId: currentRange.endContainer.parentNode.id,
+              //         endOffset: partAText.length
+              //       });
+              //     });
+              //     return;
+              //   } else {
+              //     /**
+              //      * 如果partAtext.length===0,那么会有一下几种情况:
+              //      * 1 paraIndex===0,targetIndex==0;此时如果partAtext不存在,那么就证明这里是文本的顶端了,再次触发事件时,需要阻止删除行为
+              //      * 2 paraIndex!==0,也就是>0,targetIndex==0,此时partAtext,则退回上一个P节点,使用最后一位的span节点的最后一位offset作为新range
+              //      * 3 targetIndex!==0,常规删除行为,使用targetIndex-1的span节点以及text的长度创建新range;
+              //      */
 
-                  // const id = s
-                  // 按键发生时,target所对应的span元素在兄弟元素节点中的索引;
-                  const paraIndex = this.trees.children.findIndex(item => {
-                    return item.id === target.parent.id;
-                  });
-                  const targetIndex = target.parent.children.findIndex(item => {
-                    return item.id === target.id;
-                  });
+              //     // const id = s
+              //     // 按键发生时,target所对应的span元素在兄弟元素节点中的索引;
+              //     const paraIndex = this.trees.children.findIndex(item => {
+              //       return item.id === target.parent.id;
+              //     });
+              //     const targetIndex = target.parent.children.findIndex(item => {
+              //       return item.id === target.id;
+              //     });
 
-                  // 此时位于段首,再删除会删到上一个段落
-                  if (targetIndex === 0) {
-                    console.log("位于段首,退回上一段");
-                    if (paraIndex === 0) {
-                      if (partAText.length === 0) {
-                        console.log("删无可删");
-                        return;
-                      } else {
-                        console.log("啊?");
-                        target.text =
-                          partAText.substring(0, partAText.length - 1) +
-                          partBText;
-                        const br = await new ElementNode("br");
-                        br.parent = target.parent;
-                        target.parent.children.unshift(br);
-                        setTimeout(() => {
-                          const id = target.parent.id;
-                          this.redirectRange({
-                            startId: id,
-                            // startOffset: partAText.length-1,
-                            endId: id
-                            // endOffset: partAText.length-1
-                          });
-                        }, 0);
-                        return;
-                      }
-                    } else {
-                      target.text =
-                        partAText.substring(0, partAText.length - 1) +
-                        partBText;
-                      // const paraList = this.trees.children
-                      const elderBro = this.trees.children[paraIndex - 1];
-                      // 上一个段落存在有意义的元素节点
-                      console.log("上一个段落存在有意义的元素节点");
-                      if (
-                        elderBro.children[0] &&
-                        elderBro.children[0].tag !== "br"
-                      ) {
-                        // 新range为上一个段落的最后一个节点的末尾
-                        setTimeout(() => {
-                          const id = elderBro.id;
+              //     // 此时位于段首,再删除会删到上一个段落
+              //     if (targetIndex === 0) {
+              //       console.log("位于段首,退回上一段");
+              //       if (paraIndex === 0) {
+              //         if (partAText.length === 0) {
+              //           console.log("删无可删");
+              //           return;
+              //         } else {
+              //           console.log("啊?");
+              //           target.text =
+              //             partAText.substring(0, partAText.length - 1) +
+              //             partBText;
+              //           const br = await new ElementNode("br");
+              //           br.parent = target.parent;
+              //           target.parent.children.unshift(br);
+              //           setTimeout(() => {
+              //             const id = target.parent.id;
+              //             this.redirectRange({
+              //               startId: id,
+              //               // startOffset: partAText.length-1,
+              //               endId: id
+              //               // endOffset: partAText.length-1
+              //             });
+              //           }, 0);
+              //           return;
+              //         }
+              //       } else {
+              //         target.text =
+              //           partAText.substring(0, partAText.length - 1) +
+              //           partBText;
+              //         // const paraList = this.trees.children
+              //         const elderBro = this.trees.children[paraIndex - 1];
+              //         // 上一个段落存在有意义的元素节点
+              //         console.log("上一个段落存在有意义的元素节点");
+              //         if (
+              //           elderBro.children[0] &&
+              //           elderBro.children[0].tag !== "br"
+              //         ) {
+              //           // 新range为上一个段落的最后一个节点的末尾
+              //           setTimeout(() => {
+              //             const id = elderBro.id;
 
-                          this.redirectRange({
-                            startId: id,
-                            startOffset:
-                              elderBro.children[elderBro.children.length - 1]
-                                .text.length,
-                            endId: id,
-                            endOffset:
-                              elderBro.children[elderBro.children.length - 1]
-                                .text.length
-                          });
-                        }, 0);
-                      } else {
-                        // 上一个段落没有
-                        console.log("上一个段落没有实体元素,新range在段首");
-                        setTimeout(() => {
-                          const id = elderBro.id;
-                          this.redirectRange({
-                            startId: id,
-                            endId: id
-                          });
-                        }, 0);
-                      }
-                    }
-                  } else if (targetIndex > 0) {
-                    console.log("退到前一位");
-                    target.text =
-                      partAText.substring(0, partAText.length - 1) + partBText;
-                    setTimeout(() => {
-                      const id = target.parent.children[targetIndex - 1].id;
-                      this.redirectRange({
-                        startId: id,
-                        startOffset:
-                          target.parent.children[targetIndex - 1].text.length,
-                        endId: id,
-                        endOffset:
-                          target.parent.children[targetIndex - 1].text.length
-                      });
-                    });
-                    return;
-                  }
-                  return;
-                }
-              });
+              //             this.redirectRange({
+              //               startId: id,
+              //               startOffset:
+              //                 elderBro.children[elderBro.children.length - 1]
+              //                   .text.length,
+              //               endId: id,
+              //               endOffset:
+              //                 elderBro.children[elderBro.children.length - 1]
+              //                   .text.length
+              //             });
+              //           }, 0);
+              //         } else {
+              //           // 上一个段落没有
+              //           console.log("上一个段落没有实体元素,新range在段首");
+              //           setTimeout(() => {
+              //             const id = elderBro.id;
+              //             this.redirectRange({
+              //               startId: id,
+              //               endId: id
+              //             });
+              //           }, 0);
+              //         }
+              //       }
+              //     } else if (targetIndex > 0) {
+              //       console.log("退到前一位");
+              //       target.text =
+              //         partAText.substring(0, partAText.length - 1) + partBText;
+              //       setTimeout(() => {
+              //         const id = target.parent.children[targetIndex - 1].id;
+              //         this.redirectRange({
+              //           startId: id,
+              //           startOffset:
+              //             target.parent.children[targetIndex - 1].text.length,
+              //           endId: id,
+              //           endOffset:
+              //             target.parent.children[targetIndex - 1].text.length
+              //         });
+              //       });
+              //       return;
+              //     }
+              //     return;
+              //   }
+              // });
 
-              // 暂不处理
-              return;
+              // // 暂不处理
+              // return;
             } else if (event.keyCode === 13) {
+              const partAText = currentRange.commonAncestorContainer.nodeValue.substr(
+                0,
+                currentRange.startOffset
+              );
+              // console.log("partAText", partAText);
+              const partBText = currentRange.commonAncestorContainer.nodeValue.substr(
+                currentRange.endOffset,
+                currentRange.commonAncestorContainer.nodeValue.length
+              );
               event.stopImmediatePropagation();
               event.preventDefault();
               // 起点和终点在同一个之文本节点内
@@ -1115,7 +1135,7 @@ export default {
      * 粘贴前的操作,可用于拦截默认事件进行敏感词过滤等
      */
     testArraypush() {
-      this.$store.commit("testArrayPush", "酸菜宇");
+      this.store.commit("testArrayPush", "酸菜宇");
     },
     handleBeforePaste() {
       return;
@@ -1183,7 +1203,7 @@ export default {
        */
       // console.log("事件对象", event, this.directInput);
       // this.range = window.getSelection().getRangeAt(0);
-      // this.$store.commit('actionUndo')("saveRangeBeforeTextChange", {
+      // this.store.commit('actionUndo')("saveRangeBeforeTextChange", {
       //   rangeFactor: {
       //     startTextTankAncestor: window.getSelection().getRangeAt(0)
       //       .startContainer.parentNode,
@@ -1193,7 +1213,7 @@ export default {
       //     endOffset: window.getSelection().getRangeAt(0).endOffset
       //   }
       // });
-      // console.log(this.$store.prevRange);
+      // console.log(this.store.prevRange);
       // console.log()一个复杂类型（具有get、set属性）的值的时候,在chrome里console.log展开看到的是这个变量当前的值而不是代码执行时的快照,如果需要这个变量全部的属性,需要进行深拷贝,而JSON.stringify这种级别的深拷贝对不可枚举的部分和对象的方法本身不能实现序列化,需要比较麻烦的额外处理,所以如果只使用少量属性的话,建议单独取出如下,这里取出的startOffset是快照的数值而不是当前的数值
       // let startContainer = this.range.startContainer;
       // // this.rangeKeeper = startContainer;
@@ -1295,14 +1315,14 @@ export default {
           //   return false;
           // }
         } else {
-          // console.log("正常输入", this.$store.state.prevRangeFactor);
+          // console.log("正常输入", this.store.state.prevRangeFactor);
           // _.debounce( async ()=>{
           // if (this.inputLock){
           //   event.preventDefault();
           //   return;
           // }
           this.saveRange();
-          console.log("keyup时刻的range", this.$store.state.prevRangeFactor);
+          console.log("keyup时刻的range", this.store.state.prevRangeFactor);
           let currentOperateObj = this.range.commonAncestorContainer.parentNode;
           // 0419有一个问题在于,当一个P级元素删除晚全部文本后,确实是会留下一个br站位保持换行,但是在此基础上新添加的文本是不在span标签中的,因而会对后续的trees造成影响,因此在这里追加一个判断,当currentOperateObj不为span时,创造一个span添加到P里
           // 获取相应的虚拟dom的引用
@@ -1382,7 +1402,7 @@ export default {
           newinlineEle.parent = newPara.id;
           newPara.children.push(newinlineEle);
 
-          this.saveStack({
+          this.saveStack(this.trees, this.$store, {
             startId: newinlineEle.id,
             startOffset: newinlineEle.text.length,
             endId: newinlineEle.id,
@@ -1409,7 +1429,7 @@ export default {
     redirectRange(forNewRange) {
       console.log("设置指定range", forNewRange.startId);
       console.log(document.getElementById(forNewRange.startId));
-      this.$store.commit("saveRangeBeforeTextChange", {
+      this.store.commit("saveRangeBeforeTextChange", {
         rangeFactor: {
           startTextTankAncestor: document.getElementById(forNewRange.startId),
           startOffset: forNewRange.startOffset || 0,
@@ -1446,7 +1466,22 @@ export default {
     // 20200218添加补正参数startOffsetChange和endOffsetChange,用于在直接输入和输入法输入包括剪切粘贴的时候,把range调整到合理的位置
     rangeForTextChange,
     // 保存range要素至data和vuex
-    saveRange
+    saveRange() {
+      if (window.getSelection().getRangeAt(0)) {
+        this.range = window.getSelection().getRangeAt(0);
+        // console.log("saved", this.range);
+        this.store.commit("saveRangeBeforeTextChange", {
+          rangeFactor: {
+            startTextTankAncestor: window.getSelection().getRangeAt(0)
+              .startContainer.parentNode,
+            startOffset: window.getSelection().getRangeAt(0).startOffset,
+            endTextTankAncestor: window.getSelection().getRangeAt(0)
+              .endContainer.parentNode,
+            endOffset: window.getSelection().getRangeAt(0).endOffset
+          }
+        });
+      }
+    }
   }
 };
 </script>
