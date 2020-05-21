@@ -1,29 +1,89 @@
 import Vue from "vue";
 import Vuex from "vuex";
 
+let _ = require("lodash");
 Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
     prevRangeFactor: {},
-    prevTextNodeLength: {}
+    prevTextNodeLength: {},
     // tempAttr: ""
+    testArray: [],
+    /**
+     * expect an Array item with range:{startContainer,endContainer,startOffset,endOffset} and virtual-DOM tree
+     */
+    
+    normalStack: [],
+    historyStack: [],
+    // assign an variable, to solve vuex's mutations can not return a value to an outside vue-instance
+    undoTop: []
   },
+  // getters: {
+  //   normalundoTop: state => {
+  //     return state.normalStack[0];
+  //   }
+  // },
   mutations: {
-    saveRangeBeforeTextChange(state, params) {
-      console.log("存入store的range参数", params.rangeFactor);
-      state.prevRangeFactor = params.rangeFactor;
+    saveRangeBeforeTextChange(state, payload) {
+      console.log("存入store的range参数", payload.rangeFactor);
+      state.prevRangeFactor = payload.rangeFactor;
     },
-    savePreTextNodeLength(state, param) {
-      state.prevTextNodeLength = param.prelength;
+    savePreTextNodeLength(state, payload) {
+      state.prevTextNodeLength = payload.prelength;
+    },
+    testArrayPush(state, payload) {
+      state.testArray.push(payload);
+      console.log(state.testArray);
+    },
+    // stackHandler
+    actionUndo(state) {
+      console.log("beforeUndo", state.normalStack);
+      // 当normalStack长度为1时,此时是初始化的状态,如果再删除,会导致pop出空,这就是为什么点击redo或者undo有时候不生效的原因,为了不让他返回空,在这里加一个限制
+      if (state.normalStack.length > 0) {
+        const top = state.normalStack.pop();
+        state.undoTop = top;
+        state.historyStack.push(top);
+        console.log("afterUndo------------normalStack", state.normalStack);
+        console.log("afterUndo------------historyStack", state.historyStack);
+        return;
+      }
+      console.log("undo栈pop限制");
+      return;
+    },
+    actionRedo(state) {
+      console.log("beforeRedo", state.normalStack);
+      if (state.historyStack.length > 0) {
+        const top = state.historyStack.pop();
+        state.normalStack.push(top);
+        console.log("afterRedo------------normalStack", state.normalStack);
+        console.log("afterRedo------------historyStack", state.historyStack);
+        return;
+      }
+      console.log("redo栈pop限制");
+      return;
+    },
+    // 每一个Indo都会把history清空
+    actionIndo(state, payload) {
+      const payloadafterDeal = _.cloneDeep(payload);
+      console.log("payload", payloadafterDeal);
+      state.normalStack.push(payloadafterDeal);
+      state.historyStack = [];
+      const tempArr = Array.from(state.normalStack, item => {
+        return item.trees.children[0].children[0].text;
+      });
+      console.log(
+        tempArr,
+        "\nlength",
+        state.normalStack.length,
+        "\nfirst",
+        state.normalStack[0].trees.children[0].children[0].text,
+        // state.normalStack[1].trees.children[0].children[0].text,
+        "\nlast",
+        _.last(state.normalStack).trees.children[0].children[0].text
+      );
+      console.log("history", state.historyStack);
     }
-    // getRange(state) {
-    //   return state.prevRangeFactor;
-    // },
-    // temptest(state, param) {
-    //   console.log("payload", param);
-    //   state.tempAttr = param;
-    // }
   },
   actions: {},
   modules: {}

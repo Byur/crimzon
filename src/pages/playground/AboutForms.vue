@@ -144,7 +144,10 @@
               </div>
               <!-- 单项表单校验合法性和禁用校验,校验整个表单 -->
               <div class="validator">
-                <div class="desc">
+                <div
+                  class="desc"
+                  style="text-decoration:blink;text-decoration:underline;"
+                >
                   单项表单校验合法性和禁用校验,校验整个表单
                 </div>
                 <div class="content"></div>

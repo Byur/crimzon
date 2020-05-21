@@ -7,35 +7,55 @@ export default class ElementNode {
   // attr-Object
   // decoration-Object
   // children-Array
-  constructor(tag, text, attr, style, children) {
+  constructor(tag, text, style, attr, children) {
     // let now = new Date();
     this.tag = tag || "";
-    this.text = text || "";
-    this.attr = attr || {};
+    this._text = text || "";
     this.style = style || {};
+    this.attr = attr || {};
     this.children = children || [];
-    // this.display = dispaly;
+    this.display = true;
     // 唯一标识，用于在同一级数中识别自身
     this.id = "z" + new Date().getTime();
     this.parent = null;
     // 用于区别节点深度和获取引用的路径，可重复
     // this.level = level;
   }
-  // set text(value) {
-  //   // this.text = value;
-  //   console.log("改变了吗", value);
+  set text(value) {
+    if (this.tag === "span") {
+      if (value !== "") {
+        this._text = value;
+        console.log("改变了", value);
+        return;
+      } else {
+        this.display = false;
+        return;
+      }
+    }
+  }
+  get text() {
+    return this._text;
+  }
+  // set setText(value){
+  //   if (value===''){
+  //     this.display = false;
+  //     this.text = '1'
+  //     return;
+  //   }
+  //   this.text = value;
+  //   return;
   // }
   toString() {
     // this.attr.id = this.id;
     let formatStyle = "";
     for (let i in this.style) {
       formatStyle = formatStyle + `${i}:${this.style[i]};`;
-      console.log(`${i}:${this.style[i]};`);
+      // console.log(`${i}:${this.style[i]};`);
     }
     let formatAttr = "";
     for (let i in this.attr) {
       formatAttr = formatAttr + `${i}=${this.attr[i]} `;
-      console.log(`${i}:${this.style[i]};`);
+      // console.log(`${i}:${this.style[i]};`);
     }
     // console.log()
     if (singelTagList.indexOf(this.tag) === -1) {
@@ -43,19 +63,24 @@ export default class ElementNode {
         formatStyle ? "style=" + formatStyle : ""
       } ${formatAttr} id=${this.id}>`;
       const tail = `</${this.tag}>`;
-      if (this.children.length === 0) {
-        return head + this.text + tail;
+      let filterenable = this.children.filter(item => {
+        return item.display === true;
+      });
+      if (filterenable.length === 0) {
+        return head + this._text + tail;
       } else {
-        // let filterenable = this.children.filter(item => {
-        //   return item.display === true;
-        // });
-        let innerHTML = this.children.reduce(function(prev, cur) {
+        // console.log('filterenable',this,filterenable)
+        // if (filterenable.length > 0) {
+        let innerHTML = filterenable.reduce(function(prev, cur) {
           return prev + cur;
         });
         return head + innerHTML + tail;
+        // }
       }
     } else {
-      const theRudeConstructor = `<${this.tag}${formatStyle ? "style=" + formatStyle : ""}${formatAttr || ""}/>`;
+      const theRudeConstructor = `<${this.tag}${
+        formatStyle ? "style=" + formatStyle : ""
+      }${formatAttr || ""}/>`;
       return theRudeConstructor;
     }
   }
