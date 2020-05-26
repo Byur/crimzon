@@ -1,21 +1,17 @@
 import _ from "lodash";
 // action:redo/undo为参数,从相应的栈中获取栈顶,将相应时刻的trees和range返回
-export function getStack(trees, store, action) {
+export function getStack(store, action) {
+  console.log("param check");
   if (action === "undo") {
-    // if (store.state.historyStack.length === 0){
-    //   console.log('额外录入一个栈')
-    //   saveStack();
-    //   getStack('undo')
-    //   return;
-    // }
     console.log("undo");
     store.commit("actionUndo");
     // let currentStack = store.state.historyStack;
     const topAfterUndo = store.state.undoTop;
     console.log("topAfterUndo", topAfterUndo);
     if (topAfterUndo) {
-      trees = topAfterUndo.trees;
+      // trees = topAfterUndo.trees;
       console.log("jieshu");
+      return topAfterUndo;
     }
     return;
   } else {
@@ -25,14 +21,16 @@ export function getStack(trees, store, action) {
     const topAfterRedo = _.last(currentStack);
     console.log("topAfterRedo", topAfterRedo);
     if (topAfterRedo) {
-      trees = topAfterRedo.trees;
+      // trees = topAfterRedo.trees;
       console.log("jieshu");
+      return topAfterRedo;
     }
   }
   // console.log(currentStack);
 }
 // normal入栈
 export function saveStack(trees, store, forNewRange) {
+  console.log("param check", trees);
   console.log("入栈");
   const payload = {
     range: {

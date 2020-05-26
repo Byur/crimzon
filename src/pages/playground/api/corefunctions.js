@@ -1,4 +1,20 @@
 // 保存range要素至data和vuex
+
+export function cleanEmptySibling(tree) {
+  tree.children.forEach(function(item, index) {
+    if (item.children.length > 0) {
+      // item.forEach(function(e,i){
+      //   if
+      // })
+      const filter = item.children.filter(function(item) {
+        return item.display !== false;
+      });
+      item.children = filter;
+    } else {
+      tree.splice(index, 1);
+    }
+  });
+}
 export function saveRange(store) {
   if (window.getSelection().getRangeAt(0)) {
     // this.range = window.getSelection().getRangeAt(0);
@@ -18,7 +34,7 @@ export function saveRange(store) {
 // 20200218添加补正参数startOffsetChange和endOffsetChange,用于在直接输入和输入法输入包括剪切粘贴的时候,把range调整到合理的位置
 export function rangeForTextChange(store, offsetFluctuation = 0) {
   let rangeAfter = store.state.prevRangeFactor;
-  console.log("rangeAfter", rangeAfter);
+  // console.log("rangeAfter", rangeAfter);
   let selection = window.getSelection();
   let newRange = document.createRange();
   // // range对象,通常是this.range
@@ -34,7 +50,7 @@ export function rangeForTextChange(store, offsetFluctuation = 0) {
   let startContainer = startTextTankAncestor.childNodes[0];
   let endContainer = endTextTankAncestor.childNodes[0];
 
-  console.log("startContainer", startTextTankAncestor, startContainer);
+  // console.log("startContainer", startTextTankAncestor, startContainer);
   newRange.setStart(startContainer, rangeAfter.startOffset + offsetFluctuation);
   newRange.setEnd(endContainer, rangeAfter.endOffset + offsetFluctuation);
   // console.log(newRange.startContainer.parentNode);
@@ -44,8 +60,8 @@ export function rangeForTextChange(store, offsetFluctuation = 0) {
   // console.timeEnd("-----------------timer--------------------");
 }
 export function redirectRange(store, forNewRange) {
-  console.log("设置指定range", forNewRange.startId);
-  console.log(document.getElementById(forNewRange.startId));
+  // console.log("设置指定range", forNewRange.startId);
+  // console.log(document.getElementById(forNewRange.startId));
   store.commit("saveRangeBeforeTextChange", {
     rangeFactor: {
       startTextTankAncestor: document.getElementById(forNewRange.startId),
@@ -64,7 +80,7 @@ async function getAncestorNode(htmlNode) {
   if (htmlNode.parentNode) {
     let upgradeNode = htmlNode.parentNode;
     if (upgradeNode.id == "origin") {
-      console.log("应该停下来了", upgradeNode);
+      // console.log("应该停下来了", upgradeNode);
       return await upgradeNode;
     } else {
       // 获取这个元素节点的的父元素ID加入
@@ -80,13 +96,13 @@ async function getGenerationTree(htmlNode) {
   // 从数组头部加入冒泡顺序上的第一个元素节点id,这会导致最后一个也就是距离origin最近的子元素将会排在数组第一位
   currentPath.unshift(htmlNode.id);
   await getAncestorNode(htmlNode);
-  console.log("获取到路径", currentPath);
+  // console.log("获取到路径", currentPath);
   return await currentPath;
 }
 
 export async function findTargetNode(htmlNode, trees) {
   let res = await getGenerationTree(htmlNode);
-  console.log("回调开始", res);
+  // console.log("回调开始", res);
   let currentposi = trees;
   // console.log("trees", trees);
   // 生成id列表,表示新增节点落点位置的查找路径

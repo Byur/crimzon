@@ -13,11 +13,11 @@ export default new Vuex.Store({
     /**
      * expect an Array item with range:{startContainer,endContainer,startOffset,endOffset} and virtual-DOM tree
      */
-    
+
     normalStack: [],
     historyStack: [],
     // assign an variable, to solve vuex's mutations can not return a value to an outside vue-instance
-    undoTop: {},
+    undoTop: {}
   },
   // getters: {
   //   normalundoTop: state => {
@@ -42,9 +42,15 @@ export default new Vuex.Store({
       let top = null;
       // 当normalStack长度为1时,此时是初始化的状态,如果再删除,会导致pop出空,这就是为什么点击redo或者undo有时候不生效的原因,为了不让他返回空,在这里加一个限制
       if (state.normalStack.length > 1) {
-        state.historyStack.push(state.normalStack.pop());
-        top = _.last(state.normalStack)
-        console.log('top',top)
+        const pop = state.normalStack.pop();
+        state.historyStack.push(pop);
+        // top = pop;
+        top = _.last(state.normalStack);
+        console.log(
+          "即将呈现",
+          top.range.startId,
+          top.trees.children[0].children
+        );
         console.log("afterUndo------------normalStack", state.normalStack);
         console.log("afterUndo------------historyStack", state.historyStack);
       } else {
@@ -72,20 +78,26 @@ export default new Vuex.Store({
       console.log("payload", payloadafterDeal);
       state.normalStack.push(payloadafterDeal);
       state.historyStack = [];
-      const tempArr = Array.from(state.normalStack, item => {
-        return item.trees.children[0].children[0].text;
-      });
-      console.log(
-        tempArr,
-        "\nlength",
-        state.normalStack.length,
-        "\nfirst",
-        state.normalStack[0].trees.children[0].children[0].text,
-        // state.normalStack[1].trees.children[0].children[0].text,
-        "\nlast",
-        _.last(state.normalStack).trees.children[0].children[0].text
-      );
-      console.log("history", state.historyStack);
+      // const tempArr = Array.from(state.normalStack, item => {
+      //   return (
+      //     item.range.startId +
+      //     "|" +
+      //     item.trees.children[0].children[0].text +
+      //     "|" +
+      //     item.trees.children[0].children[1].text
+      //   );
+      // });
+      // console.log(
+      //   tempArr
+      //   // "\nlength",
+      //   // state.normalStack.length,
+      //   // "\nfirst",
+      //   // state.normalStack[0].trees.children[0].children[1].text,
+      //   // // state.normalStack[1].trees.children[0].children[0].text,
+      //   // "\nlast",
+      //   // _.last(state.normalStack).trees.children[0].children[1].text
+      // );
+      // console.log("history", state.historyStack);
     }
   },
   actions: {},

@@ -23,11 +23,12 @@ export default class ElementNode {
   }
   set text(value) {
     if (this.tag === "span") {
+      this._text = value;
       if (value !== "") {
-        this._text = value;
         console.log("改变了", value);
         return;
       } else {
+        // this._text = value
         this.display = false;
         return;
       }
@@ -59,9 +60,10 @@ export default class ElementNode {
     }
     // console.log()
     if (singelTagList.indexOf(this.tag) === -1) {
-      const head = `<${this.tag}${
+      // console.log('不是单标签')
+      const head = `<${this.tag} ${
         formatStyle ? "style=" + formatStyle : ""
-      } ${formatAttr} id=${this.id}>`;
+      } id=${this.id} ${formatAttr}>`;
       const tail = `</${this.tag}>`;
       let filterenable = this.children.filter(item => {
         return item.display === true;
@@ -78,6 +80,7 @@ export default class ElementNode {
         // }
       }
     } else {
+      console.log("单标签?", this.tag);
       const theRudeConstructor = `<${this.tag}${
         formatStyle ? "style=" + formatStyle : ""
       }${formatAttr || ""}/>`;
