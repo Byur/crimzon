@@ -530,7 +530,7 @@ export default {
               });
             }
           } else {
-            console.log("当前没有选中文本节点");
+            console.log("from core:当前没有选中文本节点");
             if (event.keyCode === 8) {
               event.stopImmediatePropagation();
               event.preventDefault();
