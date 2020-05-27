@@ -25,7 +25,7 @@ export default class ElementNode {
     if (this.tag === "span") {
       this._text = value;
       if (value !== "") {
-        console.log("改变了", value);
+        // console.log("改变了", value);
         return;
       } else {
         // this._text = value

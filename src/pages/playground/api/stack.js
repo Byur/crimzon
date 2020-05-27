@@ -14,7 +14,7 @@ export function getStack(store, action) {
       return topAfterUndo;
     }
     return;
-  } else {
+  } else if (action === "redo") {
     console.log("redo");
     store.commit("actionRedo");
     let currentStack = store.state.normalStack;
@@ -25,6 +25,8 @@ export function getStack(store, action) {
       console.log("jieshu");
       return topAfterRedo;
     }
+  } else {
+    console.log('--------------------????????-------------------------')
   }
   // console.log(currentStack);
 }

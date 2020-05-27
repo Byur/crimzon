@@ -9,7 +9,8 @@ export default new Vuex.Store({
     prevRangeFactor: {},
     prevTextNodeLength: {},
     // tempAttr: ""
-    testArray: [],
+    // expect String,record last stack action type,when execute Indo action and lastAction===undo||redo:than clean normal Stack&& history Stack
+    lastAction: '',
     /**
      * expect an Array item with range:{startContainer,endContainer,startOffset,endOffset} and virtual-DOM tree
      */
@@ -58,6 +59,19 @@ export default new Vuex.Store({
         console.log("undo栈pop限制");
       }
       state.undoTop = top;
+      state.lastAction = "Undo";
+      const beforeIndo = Array.from(state.normalStack, item => {
+        return (
+          item.range.startId +
+          "|" +
+          item.range.startOffset +
+          "|" +
+          item.trees.children[0].children[0].text +
+          "|" +
+          item.trees.children[0].children[1].text
+        );
+      });
+      console.log("--------------------------------afterUndo------------------------\n",beforeIndo)
       return;
     },
     actionRedo(state) {
@@ -70,33 +84,52 @@ export default new Vuex.Store({
         return;
       }
       console.log("redo栈pop限制");
+      state.lastAction = "Redo";
       return;
     },
     // 每一个Indo都会把history清空
     actionIndo(state, payload) {
+      state.historyStack = [];
       const payloadafterDeal = _.cloneDeep(payload);
       console.log("payload", payloadafterDeal);
+      const beforeIndo = Array.from(state.normalStack, item => {
+        return (
+          item.range.startId +
+          "|" +
+          item.range.startOffset +
+          "|" +
+          item.trees.children[0].children[0].text +
+          "|" +
+          item.trees.children[0].children[1].text
+        );
+      });
+      console.log("--------------------------------beforeIndo------------------------\n",beforeIndo)
+      // if (state.lastAction==='Undo'){
+      //   state.normalStack = state.normalStack.splice(0,1);
+      // }
       state.normalStack.push(payloadafterDeal);
-      state.historyStack = [];
-      // const tempArr = Array.from(state.normalStack, item => {
-      //   return (
-      //     item.range.startId +
-      //     "|" +
-      //     item.trees.children[0].children[0].text +
-      //     "|" +
-      //     item.trees.children[0].children[1].text
-      //   );
-      // });
-      // console.log(
-      //   tempArr
-      //   // "\nlength",
-      //   // state.normalStack.length,
-      //   // "\nfirst",
-      //   // state.normalStack[0].trees.children[0].children[1].text,
-      //   // // state.normalStack[1].trees.children[0].children[0].text,
-      //   // "\nlast",
-      //   // _.last(state.normalStack).trees.children[0].children[1].text
-      // );
+      state.lastAction = "Indo";
+      const tempArr = Array.from(state.normalStack, item => {
+        return (
+          item.range.startId +
+          "|" +
+          item.range.startOffset +
+          "|" +
+          item.trees.children[0].children[0].text +
+          "|" +
+          item.trees.children[0].children[1].text
+        );
+      });
+      console.log(
+        tempArr
+        // "\nlength",
+        // state.normalStack.length,
+        // "\nfirst",
+        // state.normalStack[0].trees.children[0].children[1].text,
+        // // state.normalStack[1].trees.children[0].children[0].text,
+        // "\nlast",
+        // _.last(state.normalStack).trees.children[0].children[1].text
+      );
       // console.log("history", state.historyStack);
     }
   },

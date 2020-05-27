@@ -3,7 +3,9 @@ import { saveStack } from "../api/stack";
 import {
   findTargetNode,
   redirectRange,
-  cleanEmptySibling
+  rangeForTextChange,
+  cleanEmptySibling,
+  saveRange
 } from "../api/corefunctions";
 
 export const backspace = {
@@ -156,13 +158,16 @@ export const backspace = {
             console.log("删无可删");
             return;
           } else {
-            console.log("位于段首,退回上一段");
+            console.log("位于段首,本次保留空行,再次退格将退回上一段");
             target.text =
               partAText.substring(0, partAText.length - 1) + partBText;
+            const br = await new ElementNode("br");
+            br.parent = target.parent;
+            target.parent.children.unshift(br);
             setTimeout(() => {
-              const id = target.parent.children[targetIndex - 1].id;
-              const offset =
-                target.parent.children[targetIndex - 1].text.length;
+              const id = target.parent.id;
+              const offset = 0;
+              // target.parent.children[targetIndex - 1].text.length;
               redirectRange(store, {
                 startId: id,
                 startOffset: offset,
@@ -328,7 +333,7 @@ export const enter = {
     // 如果range.commonAncestorContainer的节点类型为text(nodeType===3),则证明当前是一个文本节点,使用他的父节点parentNode作为currentObject;如果不是文本节点,则证明有可能发生了跨节点选取或者P级元素中存在span的元素节点和对应的文本节点
     const currentOperateObj = range.commonAncestorContainer.parentNode;
     // 获取相应的虚拟dom的引用
-    findTargetNode(currentOperateObj).then(async res => {
+    findTargetNode(currentOperateObj, trees).then(async res => {
       const target = res;
       console.log("正在受影响的实例", target);
       const paraNode = range.commonAncestorContainer.parentNode.parentNode;
@@ -419,9 +424,15 @@ export const enter = {
         setTimeout(() => {
           // const id = newPara.children[0]?newPara.children[0].id:newPara.id
           const id = newPara.id;
-          redirectRange({
+          redirectRange(store, {
             startId: id,
             endId: id
+          });
+          saveStack(trees, store, {
+            startId: id,
+            // startOffset: partAText.length,
+            endId: id
+            // endOffset: partAText.length
           });
           console.log("insertIndex", insertIndex);
         }, 0);
@@ -443,9 +454,15 @@ export const enter = {
         setTimeout(() => {
           // const id = newPara.children[0]?newPara.children[0].id:newPara.id
           const id = paraNode.id;
-          redirectRange({
+          redirectRange(store, {
             startId: id,
             endId: id
+          });
+          saveStack(trees, store, {
+            startId: id,
+            // startOffset: partAText.length,
+            endId: id
+            // endOffset: partAText.length
           });
           console.log("insertIndex", insertIndex);
         }, 0);
@@ -457,5 +474,113 @@ export const enter = {
   sceneRangeMode: function(range) {
     // const range = range;
     return range;
+  }
+};
+export const regularInput = {
+  sceneDirectMode: (range, trees, store) => {
+    saveRange(store)
+    console.log("saveRangefromrebuild")
+    const currentOperateObj = range.commonAncestorContainer.parentNode;
+    findTargetNode(currentOperateObj, trees).then(async res => {
+      // 若res不是个用于装载文本的节点,他将会是个P级节点,由上一个注释可知,在P级节点中编辑文本,重排时依然会保留用于占位的br节点,因此在下面做了一个判断,当p级节点但只有一个子节点并且这个节点为br时,将删除这个节点并且新增一个span节点手动插入
+      // console.log("-----------按键松开后的range所在的父级元素节点", res);
+      if (res.tag !== "span") {
+        console.log("不声不响?")
+        if (res.children.length === 1 && res.children[0].tag === "br") {
+          res.children.pop();
+        }
+        const span = await new ElementNode(
+          "span",
+          range.commonAncestorContainer.nodeValue
+        );
+        // 0424 追加父节点属性parent
+        span.parent = res;
+        res.children.push(span);
+        setTimeout(() => {
+          rangeForTextChange(store);
+          saveStack(trees, store, {
+            startId: span.id,
+            startOffset: span.text.length,
+            endId: span.id,
+            endOffset: span.text.length
+          });
+          // console.timeEnd("-----timer-----\n");
+        }, 5);
+        return;
+      }
+      const target = res;
+      // console.log("正在受影响的实例", target);
+      const currentNodeValue = range.commonAncestorContainer.nodeValue;
+      // console.error("--------修改值---------", currentNodeValue);
+      target.text = currentNodeValue;
+      // rangeForTextChange();
+      setTimeout(() => {
+        rangeForTextChange(store);
+        // console.log("")
+        const ceshixiugaizhiqian = Array.from(store.state.normalStack, item => {
+          return (
+            item.range.startId +
+            "|" +
+            item.range.startOffset +
+            "|" +
+            item.trees.children[0].children[0].text +
+            "|" +
+            item.trees.children[0].children[1].text
+          );
+        });
+        console.log("--------------------------------修改完成,入栈之前------------------------\n",ceshixiugaizhiqian)
+        saveStack(trees, store, {
+          startId: target.id,
+          startOffset: target.text.length,
+          endId: target.id,
+          endOffset: target.text.length
+        });
+        // console.timeEnd("-----timer-----\n");
+      }, 3);
+      return;
+    });
+    return;
+  },
+  sceneComposiveMode: (wordKeeper, range, trees, store) => {
+    const currentOperateObj = range.commonAncestorContainer.parentNode;
+    findTargetNode(currentOperateObj, trees).then(res => {
+      // console.log("莫非这才是正主", res);
+      let target = res;
+      // console.log("正在受影响的实例", target);
+      let currentNodeValue = range.commonAncestorContainer.nodeValue;
+      console.log(currentNodeValue);
+      let startOffset = store.state.prevRangeFactor.startOffset;
+      console.log(
+        wordKeeper,
+        "--------预览结果------------",
+        currentNodeValue.substring(0, startOffset) + wordKeeper
+      );
+      console.log(
+        "准备工作",
+        store.state.prevRangeFactor.startTextTankAncestor
+      );
+      console.log(window.getSelection().getRangeAt(0));
+      saveRange(store);
+      // saveStack(trees, store, {
+      //   startId: target.id,
+      //   startOffset: target.text.length,
+      //   endId: target.id,
+      //   endOffset: target.text.length
+      // });
+      target.text = currentNodeValue;
+      console.log("结束工作", target.text);
+      // console.log(window.getSelection().getRangeAt(0));
+      setTimeout(() => {
+        rangeForTextChange(store);
+        saveStack(trees, store, {
+          startId: target.id,
+          startOffset: target.text.length,
+          endId: target.id,
+          endOffset: target.text.length
+        });
+      }, 0);
+      // wordKeeper = "";
+      // console.log(target, trees);
+    });
   }
 };
