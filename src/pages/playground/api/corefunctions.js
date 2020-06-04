@@ -46,7 +46,7 @@ export function rangeForTextChange(store, offsetFluctuation = 0) {
     endTextTankAncestor = document.getElementById(
       rangeAfter.endTextTankAncestor.id
     );
-  // console.log(startTextTankAncestor, endTextTankAncestor);
+  console.log(startTextTankAncestor, endTextTankAncestor);
   let startContainer = startTextTankAncestor.childNodes[0];
   let endContainer = endTextTankAncestor.childNodes[0];
 

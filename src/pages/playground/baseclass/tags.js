@@ -81,9 +81,8 @@ export default class ElementNode {
       }
     } else {
       console.log("单标签?", this.tag);
-      const theRudeConstructor = `<${this.tag}${
-        formatStyle ? "style=" + formatStyle : ""
-      }${formatAttr || ""}/>`;
+      const theRudeConstructor = `<${this.tag}${this.id ? " id=" + this.id + "" : ""}${formatStyle ? "style=" + formatStyle : ""}${formatAttr || ""}
+      />`;
       return theRudeConstructor;
     }
   }

@@ -9,8 +9,8 @@ export default new Vuex.Store({
     prevRangeFactor: {},
     prevTextNodeLength: {},
     // tempAttr: ""
-    // expect String,record last stack action type,when execute Indo action and lastAction===undo||redo:than clean normal Stack&& history Stack
-    lastAction: '',
+    // // expect String,record last stack action type,when execute Indo action and lastAction===undo||redo:than clean normal Stack&& history Stack
+    // lastAction: "",
     /**
      * expect an Array item with range:{startContainer,endContainer,startOffset,endOffset} and virtual-DOM tree
      */
@@ -62,16 +62,17 @@ export default new Vuex.Store({
       state.lastAction = "Undo";
       const beforeIndo = Array.from(state.normalStack, item => {
         return (
-          item.range.startId +
-          "|" +
-          item.range.startOffset +
-          "|" +
-          item.trees.children[0].children[0].text +
-          "|" +
-          item.trees.children[0].children[1].text
+          item.range.startId + "|" + item.range.startOffset + "|"
+          // +
+          // item.trees.children[0].children[0].text +
+          // "|" +
+          // item.trees.children[0].children[1].text
         );
       });
-      console.log("--------------------------------afterUndo------------------------\n",beforeIndo)
+      console.log(
+        "--------------------------------afterUndo------------------------\n",
+        beforeIndo
+      );
       return;
     },
     actionRedo(state) {
@@ -98,12 +99,16 @@ export default new Vuex.Store({
           "|" +
           item.range.startOffset +
           "|" +
-          item.trees.children[0].children[0].text +
-          "|" +
-          item.trees.children[0].children[1].text
+          item.trees.children[0].children[0].text
+          // +
+          // "|" +
+          // item.trees.children[0].children[1].text
         );
       });
-      console.log("--------------------------------beforeIndo------------------------\n",beforeIndo)
+      console.log(
+        "--------------------------------beforeIndo------------------------\n",
+        beforeIndo
+      );
       // if (state.lastAction==='Undo'){
       //   state.normalStack = state.normalStack.splice(0,1);
       // }
@@ -111,13 +116,11 @@ export default new Vuex.Store({
       state.lastAction = "Indo";
       const tempArr = Array.from(state.normalStack, item => {
         return (
-          item.range.startId +
-          "|" +
-          item.range.startOffset +
-          "|" +
-          item.trees.children[0].children[0].text +
-          "|" +
-          item.trees.children[0].children[1].text
+          item.range.startId + "|" + item.range.startOffset + "|"
+          // +
+          // item.trees.children[0].children[0].text +
+          // "|" +
+          // item.trees.children[0].children[1].text
         );
       });
       console.log(

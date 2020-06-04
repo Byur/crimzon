@@ -155,9 +155,10 @@ export const backspace = {
           });
           console.log("前方没有同胞节点", range, target.id, target.parent.id);
           if (paraIndex === 0) {
-            console.log("删无可删");
-            return;
-          } else {
+            console.log("partAtext", partAText);
+            // console.log("删无可删");
+            //   return;
+            // } else {
             console.log("位于段首,本次保留空行,再次退格将退回上一段");
             target.text =
               partAText.substring(0, partAText.length - 1) + partBText;
@@ -309,6 +310,80 @@ export const backspace = {
       return;
     }
   },
+  sceneOutOfException1: (range, trees, store) => {
+    console.log("进入sceneOutOfException1", range);
+    // const partAText = range.commonAncestorContainer.nodeValue.substr(
+    //   0,
+    //   range.startOffset
+    // );
+    // // console.log("partAText", partAText);
+    // const partBText = range.commonAncestorContainer.nodeValue.substr(
+    //   range.endOffset,
+    //   range.commonAncestorContainer.nodeValue.length
+    // );
+    // 此时commonAncestorContainer是span节点,不是text节点,因此直接使用span节点即可
+    const currentOperateObj = range.commonAncestorContainer;
+    findTargetNode(currentOperateObj, trees).then(async res => {
+      const target = res;
+      console.log(target);
+      // 判断target所在的位置(paraIndex)
+      const paraIndex = trees.children.findIndex(
+        item => target.parent.id === item.id
+      );
+      if (paraIndex > 0) {
+        console.log(
+          "存在上一个段落,退回上一段,其中有可能上一段是个空段落,需要区别处理"
+        );
+        // return;
+      } else {
+        // console.log(range.commonAncestorContainer.innerText);
+        // range.commonAncestorContainer.innerText.substring(0, partAText.length - 1)
+        // target.text = "";
+        // cleanEmptySibling(trees);
+        if (target.tag === "br") {
+          console.log("最后一个段落,无法再向上删除");
+          return;
+        } else if (target.tag === "span") {
+          if (target.text.length === 1) {
+            target.text = range.commonAncestorContainer.innerText.substring(
+              0,
+              range.commonAncestorContainer.innerText.length - 1
+            );
+            // 补充一个br保持空行
+            const br = await new ElementNode("br");
+            br.parent = target.parent;
+            target.parent.children.unshift(br);
+            cleanEmptySibling(trees);
+            setTimeout(() => {
+              const id = target.parent.id;
+              const offset = 0;
+              // target.parent.children[targetIndex - 1].text.length;
+              redirectRange(store, {
+                startId: id,
+                startOffset: offset,
+                endId: id,
+                endOffset: offset
+              });
+              saveStack(trees, store, {
+                startId: id,
+                startOffset: offset,
+                endId: id,
+                endOffset: offset
+              });
+            });
+          }
+          // console.log("thisthisthis")
+          return;
+        }
+      }
+      const partAText = target.text.substr(0, range.startOffset);
+      // console.log("partAText", partAText);
+      const partBText = target.text.substr(range.endOffset, target.text.length);
+      console.log("partAText", partAText, "partBText", partBText);
+      console.log(store);
+    });
+    return;
+  },
   sceneRangeMode: function(range) {
     // const  = range;
 
@@ -316,6 +391,8 @@ export const backspace = {
   }
 };
 export const enter = {
+  // 起点和终点在同一个之文本节点内
+  // 如果range.commonAncestorContainer的节点类型为text(nodeType===3),则证明当前是一个文本节点,使用他的父节点parentNode作为currentObject;如果不是文本节点,则证明有可能发生了跨节点选取或者P级元素中存在span的元素节点和对应的文本节点
   scenePointMode: function(range, trees, store) {
     event.stopImmediatePropagation();
     event.preventDefault();
@@ -329,8 +406,6 @@ export const enter = {
       range.commonAncestorContainer.nodeValue.length
     );
 
-    // 起点和终点在同一个之文本节点内
-    // 如果range.commonAncestorContainer的节点类型为text(nodeType===3),则证明当前是一个文本节点,使用他的父节点parentNode作为currentObject;如果不是文本节点,则证明有可能发生了跨节点选取或者P级元素中存在span的元素节点和对应的文本节点
     const currentOperateObj = range.commonAncestorContainer.parentNode;
     // 获取相应的虚拟dom的引用
     findTargetNode(currentOperateObj, trees).then(async res => {
@@ -477,27 +552,33 @@ export const enter = {
   }
 };
 export const regularInput = {
-  sceneDirectMode: (range, trees, store) => {
-    saveRange(store)
-    console.log("saveRangefromrebuild")
-    const currentOperateObj = range.commonAncestorContainer.parentNode;
-    findTargetNode(currentOperateObj, trees).then(async res => {
-      // 若res不是个用于装载文本的节点,他将会是个P级节点,由上一个注释可知,在P级节点中编辑文本,重排时依然会保留用于占位的br节点,因此在下面做了一个判断,当p级节点但只有一个子节点并且这个节点为br时,将删除这个节点并且新增一个span节点手动插入
-      // console.log("-----------按键松开后的range所在的父级元素节点", res);
-      if (res.tag !== "span") {
-        console.log("不声不响?")
-        if (res.children.length === 1 && res.children[0].tag === "br") {
-          res.children.pop();
-        }
-        const span = await new ElementNode(
-          "span",
-          range.commonAncestorContainer.nodeValue
-        );
+  sceneDirectMode: (keyData, range, trees, store) => {
+    saveRange(store);
+    console.log("saveRangefromrebuild", range);
+    // 两个场景下,不能正确地调整range,一个场景是range.commonAncestorContainer是P元素,且innerText为空,此时将要触发按键;
+    // 另一种场景在上一种场景的基础之下在debounce之内连续按键,导致了range.commonAncestorContainer是text节点,但range.commonAncestorContainer.parentNode是P元素(因为连续操作被debounce忽略,导致来不及处理range,场景1变成了场景2)
+    // 此种场景为在空段落中输入内容,此时将创建一个span
+    if (range.commonAncestorContainer.tagName === "P") {
+      console.log("for this moment");
+      const currentOperateObj = range.commonAncestorContainer;
+      findTargetNode(currentOperateObj, trees).then(async res => {
+        // if (res.children.length === 1 && res.children[0].tag === "br") {
+        //   res.children.pop();
+        // }
+        console.log("res.children", res.children);
+        const span = await new ElementNode("span", keyData);
         // 0424 追加父节点属性parent
         span.parent = res;
         res.children.push(span);
+        res.children.shift();
         setTimeout(() => {
-          rangeForTextChange(store);
+          // rangeForTextChange(store);
+          redirectRange(store, {
+            startId: span.id,
+            startOffset: span.text.length,
+            endId: span.id,
+            endOffset: span.text.length
+          });
           saveStack(trees, store, {
             startId: span.id,
             startOffset: span.text.length,
@@ -505,46 +586,128 @@ export const regularInput = {
             endOffset: span.text.length
           });
           // console.timeEnd("-----timer-----\n");
-        }, 5);
-        return;
-      }
-      const target = res;
-      // console.log("正在受影响的实例", target);
-      const currentNodeValue = range.commonAncestorContainer.nodeValue;
-      // console.error("--------修改值---------", currentNodeValue);
-      target.text = currentNodeValue;
-      // rangeForTextChange();
-      setTimeout(() => {
-        rangeForTextChange(store);
-        // console.log("")
-        const ceshixiugaizhiqian = Array.from(store.state.normalStack, item => {
-          return (
-            item.range.startId +
-            "|" +
-            item.range.startOffset +
-            "|" +
-            item.trees.children[0].children[0].text +
-            "|" +
-            item.trees.children[0].children[1].text
-          );
-        });
-        console.log("--------------------------------修改完成,入栈之前------------------------\n",ceshixiugaizhiqian)
-        saveStack(trees, store, {
-          startId: target.id,
-          startOffset: target.text.length,
-          endId: target.id,
-          endOffset: target.text.length
-        });
-        // console.timeEnd("-----timer-----\n");
-      }, 3);
+        }, 3);
+      });
       return;
-    });
-    return;
+    } else if (
+      range.commonAncestorContainer.nodeType === 3 &&
+      range.commonAncestorContainer.parentNode.tagName === "P"
+    ) {
+      // if (res.tag !== "span" && range.commonAncestorContainer.nodeType===3) {
+      console.log("不声不响?", range.commonAncestorContainer.nodeValue);
+      const currentOperateObj = range.commonAncestorContainer.parentNode;
+      findTargetNode(currentOperateObj, trees).then(async res => {
+        const span = await new ElementNode(
+          "span",
+          range.commonAncestorContainer.nodeValue
+        );
+        span.parent = res;
+        res.children.push(span);
+        res.children.shift();
+        saveRange(store);
+        setTimeout(() => {
+          // rangeForTextChange(store);
+          redirectRange(store, {
+            startId: span.id,
+            startOffset: span.text.length,
+            endId: span.id,
+            endOffset: span.text.length
+          });
+          saveStack(trees, store, {
+            startId: span.id,
+            startOffset: span.text.length,
+            endId: span.id,
+            endOffset: span.text.length
+          });
+
+          // console.timeEnd("-----timer-----\n");
+        }, 5);
+      });
+
+      // }
+      // if (res.children.length === 1 && res.children[0].tag === "br") {
+      //   res.children.pop();
+      // }
+      // console.log("res.children", res.children);
+      // const span = await new ElementNode(
+      //   "span",
+      //   range.commonAncestorContainer.nodeValue
+      // );
+      // // 0424 追加父节点属性parent
+      // span.parent = res;
+      // res.children.push(span);
+      // res.children.shift();
+      // cleanEmptySibling(trees)
+      // setTimeout(() => {
+      //   rangeForTextChange(store);
+      //   saveStack(trees, store, {
+      //     startId: span.id,
+      //     startOffset: span.text.length,
+      //     endId: span.id,
+      //     endOffset: span.text.length
+      //   });
+      //   // console.timeEnd("-----timer-----\n");
+      // }, 5);
+      return;
+      // }
+    } else {
+      console.log("range.commonAncestorContainer.tagName", range);
+      const currentOperateObj = range.commonAncestorContainer.parentNode;
+      findTargetNode(currentOperateObj, trees).then(async res => {
+        // console.log('res',res)
+        // 使用span作为判断条件不是很严谨,该种异常出现于基于上一种直接在P元素中连续触发按键(range.commonAncestorContainer.tagName === "P"是debounce内只触发一次按键事件),会进入原先写有代码的判断分支,姑且现在这里做处理
+
+        const target = res;
+        console.log("normal", target);
+        const currentNodeValue = target.text + keyData;
+        // console.error("--------修改值---------", currentNodeValue);
+        target.text = currentNodeValue;
+        // rangeForTextChange();
+        setTimeout(() => {
+          // rangeForTextChange(store);
+          // console.log("")
+          // const ceshixiugaizhiqian = Array.from(
+          //   store.state.normalStack,
+          //   item => {
+          //     return (
+          //       item.range.startId +
+          //       "|" +
+          //       item.range.startOffset +
+          //       "|" +
+          //       item.trees.children[0].children[0].text +
+          //       "|" +
+          //       item.trees.children[0].children[1].text
+          //     );
+          //   }
+          // );
+          // console.log(
+          //   "--------------------------------修改完成,入栈之前------------------------\n",
+          //   ceshixiugaizhiqian
+          // );
+          redirectRange(store, {
+            startId: target.id,
+            startOffset: target.text.length,
+            endId: target.id,
+            endOffset: target.text.length
+          });
+          saveStack(trees, store, {
+            startId: target.id,
+            startOffset: target.text.length,
+            endId: target.id,
+            endOffset: target.text.length
+          });
+          // console.timeEnd("-----timer-----\n");
+        }, 3);
+        return;
+      });
+      return;
+    }
+    // let currentOperateObj = this.range.commonAncestorContainer.parentNode;
+    // // 0419有一个问题在于,当一个P级元素删除晚全部文本后,确实是会留下一个br站位保持换行,但是在此基础上新添加的文本是不在span标签中的,因而会对后续的trees造成影响,因此在这里追加一个判断,当currentOperateObj不为span时,创造一个span添加到P里
   },
   sceneComposiveMode: (wordKeeper, range, trees, store) => {
     const currentOperateObj = range.commonAncestorContainer.parentNode;
     findTargetNode(currentOperateObj, trees).then(res => {
-      // console.log("莫非这才是正主", res);
       let target = res;
       // console.log("正在受影响的实例", target);
       let currentNodeValue = range.commonAncestorContainer.nodeValue;

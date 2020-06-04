@@ -26,7 +26,7 @@ export function getStack(store, action) {
       return topAfterRedo;
     }
   } else {
-    console.log('--------------------????????-------------------------')
+    console.log("--------------------????????-------------------------");
   }
   // console.log(currentStack);
 }
