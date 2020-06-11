@@ -280,7 +280,7 @@ export default {
     // events
     donothing(event) {
       event.preventDefault();
-      console.log("被阻止了");
+      // console.log("被阻止了");
       return;
     },
     actionUndo() {
@@ -313,7 +313,8 @@ export default {
       this.saveRange();
       this.directInput = false;
     },
-    end: _.debounce(function(event) {
+    // end: _.debounce(function(event) {
+    end() {
       console.log("-----------------end---------------------", event);
       this.wordKeeper = event.data;
       regularInput.sceneComposiveMode(
@@ -322,36 +323,9 @@ export default {
         this.trees,
         this.$store
       );
-      // let currentOperateObj = this.range.commonAncestorContainer.parentNode;
-      // this.findTargetNode(currentOperateObj, this.trees).then(res => {
-      //   // console.log("莫非这才是正主", res);
-      //   let target = res;
-      //   // console.log("正在受影响的实例", target);
-      //   let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
-      //   console.log(currentNodeValue);
-      //   let startOffset = this.store.state.prevRangeFactor.startOffset;
-      //   console.log(
-      //     this.wordKeeper,
-      //     "--------预览结果------------",
-      //     currentNodeValue.substring(0, startOffset) + this.wordKeeper
-      //   );
-      //   console.log(
-      //     "准备工作",
-      //     this.store.state.prevRangeFactor.startTextTankAncestor
-      //   );
-      //   console.log(window.getSelection().getRangeAt(0));
-      //   this.saveRange();
-      //   target.text = currentNodeValue;
-      //   console.log("结束工作", target.text);
-      //   // console.log(window.getSelection().getRangeAt(0));
-      //   setTimeout(() => {
-      //     this.rangeForTextChange();
-      //     this.directInput = true;
-      //   }, 0);
-      //   // this.wordKeeper = "";
-      //   // console.log(target, this.trees);
-      // });
-    }, 1000),
+      this.directInput = true;
+    },
+    // }, 1000),
 
     getRange() {
       console.log("keydown此时的range", window.getSelection().getRangeAt(0));
@@ -374,11 +348,17 @@ export default {
       // 删除、粘贴、剪切、退格,在这里执行删除操作
       // 使用剪贴板内容的时候,需要计算剪贴板内容的长度,然后再与startOffset作为新的startOffset
     },
-    async exectionRestricting(event) {
+    // exectionRestricting: _.throttle(async function(event) {
+    async exectionRestricting() {
       // event.stopImmediatePropagation();
       // event.preventDefault();
       // if (this.funcKeyCodes.indexOf(event.keyCode) !== -1) {
-      console.log("___________________________________throttle", event.target);
+      console.log(
+        "___________________________________throttle",
+        event.target,
+        event.keyCode,
+        this.directInput
+      );
       // } else {
       //   console.log(event.key)
       // }
@@ -399,9 +379,7 @@ export default {
 
         console.log("saveRange from core：keydown", this.range);
         const currentRange = this.range;
-        const pointMode =
-          currentRange.startContainer === currentRange.endContainer &&
-          currentRange.startOffset === currentRange.endOffset;
+        const pointMode = currentRange.collapsed;
         // 判定为焦点模式
         if (pointMode) {
           if (this.funcKeyCodes.indexOf(event.keyCode) === -1) {
@@ -426,11 +404,12 @@ export default {
                 event.preventDefault();
                 backspace.scenePointMode(currentRange, this.trees, this.$store);
                 // // 暂不处理
-                // return;
+                return;
               } else if (event.keyCode === 13) {
                 event.stopImmediatePropagation();
                 event.preventDefault();
                 enter.scenePointMode(currentRange, this.trees, this.$store);
+                return;
               }
             } else {
               console.log("from core:当前没有选中文本节点");
@@ -442,8 +421,13 @@ export default {
                   this.trees,
                   this.$store
                 );
-
                 return;
+              } else if (event.keyCode === 13) {
+                enter.sceneOutOfException1(
+                  currentRange,
+                  this.trees,
+                  this.$store
+                );
               }
             }
           }
@@ -903,6 +887,8 @@ export default {
         }
       }
     },
+    // }, 2000),
+
     /**
      * @event
      * 粘贴前的操作,可用于拦截默认事件进行敏感词过滤等
@@ -922,7 +908,7 @@ export default {
       this.saveRange();
       console.log("paste此时的range", this.range);
       console.time("-----when paste-----");
-      // 0416以下是带格式渲染的时候,从外部粘贴进来的文本所展示的结构,比如说从word或者excel粘贴文本进去,会跟粘贴一般文本有很大不同,当前无力完成,日后将作为一个拓展功能点追加
+      // 0416以下是带格式渲染的时候,从外部粘贴进来的文本所展示的结构,比如说从word或者excel粘贴文本进去,会跟粘贴一般文本有很大不同,当前无力完成,日后也许将作为一个拓展功能点追加
       // console.log("复制事件:文本格式", event.clipboardData.getData("text/plain"));
       // console.log("复制事件:绘本格式", event.clipboardData.getData("text/html"));
 

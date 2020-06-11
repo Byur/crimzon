@@ -15,6 +15,12 @@ export function cleanEmptySibling(tree) {
     }
   });
 }
+// 手动清楚range
+export function clearRange() {
+  let selection = window.getSelection();
+  selection.removeAllRanges();
+}
+
 export function saveRange(store) {
   if (window.getSelection().getRangeAt(0)) {
     // this.range = window.getSelection().getRangeAt(0);
