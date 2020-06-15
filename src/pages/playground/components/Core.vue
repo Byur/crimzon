@@ -440,106 +440,24 @@ export default {
             if (event.keyCode === 8) {
               event.stopImmediatePropagation();
               event.preventDefault();
+              backspace.sceneRangeMode.spanParas(
+                currentRange,
+                this.trees,
+                this.$store
+              );
               return;
             } else if (event.keyCode === 13) {
               event.stopImmediatePropagation();
               event.preventDefault();
-              console.log("跨p选取");
-              // 确定事件影响到的节点\节点所属的P元素
-              const startObj = currentRange.startContainer.parentNode;
-              this.findTargetNode(startObj).then(async res => {
-                const target = res;
-                // 加强判断
-                if (currentRange.startContainer !== currentRange.endContainer) {
-                  // 获取P节点的id,进行span的字符串截取
-                  // partA
-                  const partAText = target.text.substring(
-                    0,
-                    currentRange.startOffset
-                  );
-                  console.log("partAText", partAText);
-                  // target.text = partAText;
-                  // console.log('修改后',target.parent.children)
-                  const targetIndex = target.parent.children.findIndex(item => {
-                    return target.id === item.id;
-                  });
-                  console.log("span节点在partA中的索引", targetIndex);
-                  //  targetIndex+1为当事节点之后的span节点,从这个索引开始(包括自身)之后的所有节点全部弃置
-                  target.parent.children = target.parent.children.slice(
-                    0,
-                    targetIndex + 1
-                  );
-                  console.log("A部分", target.parent, target.parent.children);
-                  target.parent.children[targetIndex].text = partAText;
-                  // partB
-                  const partBText = currentRange.endContainer.nodeValue.substr(
-                    currentRange.endOffset,
-                    currentRange.endContainer.nodeValue.length
-                  );
-                  const startParaIndex = this.trees.children.findIndex(item => {
-                    return item.id === target.parent.id;
-                  });
-                  const endParaIndex = this.trees.children.findIndex(item => {
-                    return (
-                      item.id ===
-                      currentRange.endContainer.parentNode.parentNode.id
-                    );
-                  });
-                  const endPara = this.trees.children[endParaIndex];
-                  const partBTextIndex = endPara.children.findIndex(item => {
-                    return currentRange.endContainer.parentNode.id === item.id;
-                  });
-                  // 获取endContainer所属的span在所属的P节点中的index,在此index之前的节点全部弃置
-                  endPara.children = endPara.children.slice(partBTextIndex);
-                  console.log("endPara.children", endPara.children);
-                  if (partBText) {
-                    endPara.children[0].text = partBText;
-                  } else {
-                    const br = new ElementNode("br");
-                    br.parent = endPara;
-                    endPara.children[0] = br;
-                  }
-                  console.log(startParaIndex, endParaIndex);
-
-                  // this.trees.children[endParaIndex];
-                  // const restStartIndex = target.parent.children.findIndex(
-                  //   item => {
-                  //     return currentRange.endContainer.parentNode.id === item.id;
-                  //   }
-                  // );
-                  // 删除沿途的P节点
-                  console.log("开始删除");
-                  this.trees.children.forEach((item, index) => {
-                    if (startParaIndex < index && index < endParaIndex) {
-                      // item.children = [];
-                      this.trees.children.splice(index, 1);
-                    } else {
-                      console.log("不符合条件", index);
-                    }
-                  });
-                  // const newPara = new ElementNode("p");
-                  // const br = new ElementNode("br");
-                  // br.parent = newPara;
-                  // newPara.parent = this.trees;
-                  // newPara.children.push(br);
-                  // this.trees.children.splice(endParaIndex, 0, newPara);
-                  // 焦点重定向到结束段落的endOffset,在end节点之前的文本弃置
-                  // this.redirectRange(endPara.id);
-                  setTimeout(() => {
-                    // const id = newPara.children[0]?newPara.children[0].  id:newPara.id
-                    const id = endPara.id;
-                    this.redirectRange({
-                      startId: id,
-                      endId: id
-                    });
-                  }, 0);
-                }
-              });
-              return;
+              enter.sceneRangeMode.spanParas(
+                currentRange,
+                this.trees,
+                this.$store
+              );
             }
           }
           // 跨span选取
-          // 涉及通P节点内多个span的文本的选取,在此种场景下换行时,应删除被选取的文本,在startContainer的父节点之后进行切割,剩余部分的节点装在到新的P中,插入到startContainer所属的P节点的下一个
+          // 涉及同P节点内多个span的文本的选取,在此种场景下换行时,应删除被选取的文本,在startContainer的父节点之后进行切割,剩余部分的节点装在到新的P中,插入到startContainer所属的P节点的下一个
           else if (
             currentRange.commonAncestorContainer.tagName === "P" &&
             currentRange.startContainer !== currentRange.endContainer
@@ -547,109 +465,22 @@ export default {
             if (event.keyCode === 8) {
               event.stopImmediatePropagation();
               event.preventDefault();
+              backspace.sceneRangeMode.spanSpans(
+                currentRange,
+                this.trees,
+                this.$store
+              );
               return;
             } else if (event.keyCode === 13) {
               event.stopImmediatePropagation();
               event.preventDefault();
               console.log("跨span选取");
               // 修改partA实例
-              const startObj = currentRange.startContainer.parentNode;
-              this.findTargetNode(startObj).then(async res => {
-                const target = res;
-                console.log("受影响的实例", target);
-                console.log(target.text.substring(0, currentRange.startOffset));
-                // partA处置
-                const partAText = target.text.substring(
-                  0,
-                  currentRange.startOffset
-                );
-                target.text = partAText;
-                const partBText = currentRange.endContainer.nodeValue.substr(
-                  currentRange.endOffset,
-                  currentRange.endContainer.nodeValue.length
-                );
-                console.log("partBText", partBText);
-                const splitStartIndex = target.parent.children.findIndex(
-                  item => {
-                    return target.id === item.id;
-                  }
-                );
-                console.log(splitStartIndex);
-                // restStartIndex,也是endContainer所属span的index,以他自身为终点,以splitStartIndex为起点,这个跨度之间的实例文本全部置空
-                const restStartIndex = target.parent.children.findIndex(
-                  item => {
-                    return currentRange.endContainer.parentNode.id === item.id;
-                  }
-                );
-                // const
-                console.log(restStartIndex);
-                // 遍历被跨越的节点,将其text改成空,后续将添加一个钩子,将使其text为空的时候,限制相应实例使其不展示在html结构中
-                target.parent.children.forEach((item, index) => {
-                  // const ite
-                  if (splitStartIndex < index && index <= restStartIndex) {
-                    item.text = "";
-                  }
-                });
-                // 这里的restStartIndex+1是表示endContainer(不包括自身)之后的剩余剩余元素list的起始位置,因为partB的第一个text元素可能是被分割截取过的,所以,需要从后一位开始算,直接拿partB
-                const restNodeInP = target.parent.children.splice(
-                  restStartIndex + 1,
-                  target.parent.children.length - restStartIndex + 1
-                );
-                console.log("剩余物料", restNodeInP);
-                // 开始填充
-
-                const insertIndex =
-                  this.trees.children.findIndex(item => {
-                    return target.parent.id === item.id;
-                  }) + 1;
-                const newPara = await new ElementNode("p");
-                newPara.parent = this.trees;
-                if (restNodeInP.length !== 0) {
-                  restNodeInP.forEach(item => {
-                    item.parent = newPara;
-                  });
-                  newPara.children.push(...restNodeInP);
-                  if (partBText) {
-                    const partBContainer = await new ElementNode(target.tag);
-                    // partBContainer.tag = target.tag;
-                    // partBContainer.attr.id = partBContainer.id;
-                    partBContainer.text = partBText;
-                    partBContainer.style = target.style;
-                    // partBContainer.children = target.children;
-                    console.log("新的容器", partBContainer);
-                    partBContainer.parent = newPara;
-                    newPara.children.unshift(partBContainer);
-                  }
-                } else {
-                  // 若没有restNodeInP,也没有partBText
-                  if (!partBText) {
-                    const br = await new ElementNode("br");
-                    // 0424 追加父节点属性parent
-                    br.parent = newPara;
-                    newPara.children.push(br);
-                  } else {
-                    const partBContainer = await new ElementNode();
-                    partBContainer.tag = target.tag;
-                    // partBContainer.attr.id = partBContainer.id;
-                    partBContainer.text = partBText;
-                    partBContainer.style = target.style;
-                    partBContainer.children = target.children;
-                    console.log("新的容器", partBContainer);
-                    partBContainer.parent = newPara;
-                    newPara.children.push(partBContainer);
-                  }
-                }
-                this.trees.children.splice(insertIndex, 0, newPara);
-                setTimeout(() => {
-                  // const id = newPara.children[0]?newPara.children[0].id:newPara.id
-                  const id = newPara.id;
-                  this.redirectRange({
-                    startId: id,
-                    endId: id
-                  });
-                  console.log("insertIndex", insertIndex);
-                }, 0);
-              });
+              enter.sceneRangeMode.spanSpans(
+                currentRange,
+                this.trees,
+                this.$store
+              );
               return;
             }
           }
@@ -1071,19 +902,35 @@ export default {
         newPara.parent = this.trees;
         this.trees.children.push(newPara);
         setTimeout(() => {
-          const newinlineEle = new ElementNode("span", "炒起来", {}, {}, []);
+          const newinlineEle = new ElementNode("span", "abdl", {}, {}, []);
           newinlineEle.parent = newPara;
-          const ano1 = new ElementNode("span", "来", { color: "red" }, {}, []);
+          const ano1 = new ElementNode(
+            "span",
+            "acdc",
+            { color: "red" },
+            {},
+            []
+          );
+          const ano2 = new ElementNode(
+            "span",
+            "lenox",
+            { color: "green" },
+            {},
+            []
+          );
           ano1.id += 1;
           ano1.parent = newPara;
+          ano2.id += 2;
+          ano2.parent = newPara;
           newPara.children.push(newinlineEle);
           newPara.children.push(ano1);
+          newPara.children.push(ano2);
 
           this.saveStack(this.trees, this.$store, {
-            startId: ano1.id,
-            startOffset: ano1.text.length,
-            endId: ano1.id,
-            endOffset: ano1.text.length
+            startId: ano2.id,
+            startOffset: ano2.text.length,
+            endId: ano2.id,
+            endOffset: ano2.text.length
           });
         }, 0);
       }, 0);

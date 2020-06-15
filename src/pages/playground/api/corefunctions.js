@@ -20,6 +20,11 @@ export function clearRange() {
   let selection = window.getSelection();
   selection.removeAllRanges();
 }
+// 判定为选区模式时，处理选取中的文本;样式更换/文本覆盖/删除/换行,但操作微调太多，暂不考虑
+// export function rangeDealer(trees,range){
+//   console.log(trees,range)
+
+// }
 
 export function saveRange(store) {
   if (window.getSelection().getRangeAt(0)) {
@@ -120,18 +125,13 @@ export async function findTargetNode(htmlNode, trees) {
   console.log("matcher", res);
   // 通过路径获取落点容器的引用,从最外层origin的children开始查找,找到数组的倒数第二位节点作容器,即length-2的元素节点并返回
   for (let i = 0; i < res.length; i++) {
-    // console.log(
-    //   `第${i}次匹配,当前节点为：`,
-    //   currentposi,
-    //   "匹配ID为：",
-    //   res[i]
-    // );
+    console.log(`第${i}次匹配,当前节点为：`, currentposi, "匹配ID为：", res[i]);
     // 若当前遍历到的节点没有子节点
     // console.log(`第${i}次查询的对象是:`, currentposi);
     if (currentposi.children.length !== 0) {
       currentposi = currentposi.children.find(item => {
-        // console.log("此次遍历到的子节点", item);
-        // console.log("currentMatcher", res[i]);
+        console.log("此次遍历到的子节点", item);
+        console.log("currentMatcher", res[i]);
         return item.id === res[i];
       });
       // console.log("此次遍历完毕", currentposi);
