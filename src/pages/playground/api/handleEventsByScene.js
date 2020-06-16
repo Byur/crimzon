@@ -808,7 +808,9 @@ export const backspace = {
     },
     spanSpans: function(range, trees, store) {
       const startObj = range.startContainer.parentNode;
+      console.log("cross span", range.commonAncestorContainer, startObj);
       findTargetNode(startObj, trees).then(async res => {
+        console.log("res", res);
         const target = res;
         const partAText = target.text.substring(0, range.startOffset);
         const partBText = range.endContainer.nodeValue.substr(
@@ -833,29 +835,112 @@ export const backspace = {
           splitStartIndex + 1,
           splitEndIndex - splitStartIndex - 1
         );
+        cleanEmptySibling(trees);
+        console.log("cishicike", target.parent.children);
         clearRange();
+        if (target.parent.children.length === 0) {
+          const br = await new ElementNode("br");
+          br.parent = target.parent;
+          target.parent.children.push(br);
+          setTimeout(() => {
+            // 新的range应为target，因为新增加的行添加在target之上
+            const id = target.parent.id;
+            // const offset = partAText.length;
+            redirectRange(store, {
+              // startOffset: offset,
+              startId: id,
+              endId: id
+              // endOffset: offset
+            });
+            saveStack(trees, store, {
+              // startOffset: offset,
+              startId: id,
+              endId: id
+              // endOffset: offset
+            });
+          }, 0);
+          return;
+        } else {
+          setTimeout(() => {
+            // 新的range应为target，因为新增加的行添加在target之上
+            const id =
+              partAText.length > 0
+                ? target.id
+                : target.parent.children[splitEndIndex].id;
+            const offset = partAText.length;
+            redirectRange(store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+            saveStack(trees, store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+          }, 0);
+          return;
+        }
+      });
+      return;
+    },
+    withinSingleSpan: function(range, trees, store) {
+      console.log("选中一个文本节点的部分或全部内容");
+      const partAText = range.commonAncestorContainer.nodeValue.substr(
+        0,
+        range.startOffset
+      );
+      console.log("partAText", partAText);
+      const partBText = range.commonAncestorContainer.nodeValue.substr(
+        range.endOffset,
+        range.commonAncestorContainer.nodeValue.length
+      );
+      console.log("partBText", partBText);
+      const currentOperateObj = range.commonAncestorContainer.parentNode;
+      // 获取相应的虚拟dom的引用
+      findTargetNode(currentOperateObj, trees).then(async res => {
+        const target = res;
+        const splitStartIndex = target.parent.children.findIndex(item => {
+          return target.id === item.id;
+        });
+        console.log(
+          target.parent.children.length === 1,
+          splitStartIndex === 0,
+          partAText === ""
+        );
+
+        // 一个P中只有一个span节点并且这个span节点即将被消除
+        const newvalue = partAText + partBText;
+        target.text = newvalue;
+        if (
+          target.parent.children.length === 1 &&
+          splitStartIndex === 0 &&
+          newvalue === ""
+        ) {
+          console.log("装填空行");
+          const br = await new ElementNode("br");
+          br.parent = target.parent;
+          target.parent.children[0] = br;
+        }
         setTimeout(() => {
-          // 新的range应为target，因为新增加的行添加在target之上
-          const id =
-            partAText.length > 0
-              ? target.id
-              : target.parent.children[splitEndIndex].id;
+          const id = newvalue ? target.id : target.parent.id;
           const offset = partAText.length;
           redirectRange(store, {
-            startOffset: offset,
             startId: id,
+            startOffset: offset,
             endId: id,
             endOffset: offset
           });
           saveStack(trees, store, {
-            startOffset: offset,
             startId: id,
+            startOffset: offset,
             endId: id,
             endOffset: offset
           });
         }, 0);
       });
-      return;
     }
   }
 };
@@ -1308,16 +1393,16 @@ export const enter = {
         const splitStartIndex = target.parent.children.findIndex(item => {
           return target.id === item.id;
         });
-        console.log("splitStartIndex",splitStartIndex);
+        console.log("splitStartIndex", splitStartIndex);
         // restStartIndex,也是endContainer所属span的index,以他自身为终点,以splitStartIndex为起点,这个跨度之间的实例文本全部置空
         const restStartIndex = target.parent.children.findIndex(item => {
           return range.endContainer.parentNode.id === item.id;
         });
         // const
-        console.log("restStartIndex",restStartIndex);
+        console.log("restStartIndex", restStartIndex);
         // 先获取partA之后的列表；再从这个列表中截取partB,同时达到处理range范围内的节点的效果
         // 这里的splitStartIndex+1是表示startContainer(不包括自身)之后的剩余剩余元素list的起始位置,因为partA的第一个text元素可能是被分割截取过的,所以,restNodeInP需要从后一位开始算,直接拿partB
-        const restNodeInP = target.parent.children.slice(splitStartIndex+1);
+        const restNodeInP = target.parent.children.slice(splitStartIndex + 1);
         target.parent.children = target.parent.children.slice(
           0,
           splitStartIndex + 1
@@ -1326,7 +1411,7 @@ export const enter = {
 
         console.log("after split", target.parent.children, "baby", restNodeInP);
         const paraBcontent = restNodeInP.slice(
-          restStartIndex - (splitStartIndex+1)
+          restStartIndex - (splitStartIndex + 1)
         );
 
         // const restNodeInP = target.parent.children.splice(
@@ -1347,9 +1432,13 @@ export const enter = {
               paraBcontent.pop();
               const br = await new ElementNode("br");
               // 0424 追加父节点属性parent
-              paraBcontent.children.push(br);
+              paraBcontent.push(br);
             }
           }
+        } else {
+          const br = await new ElementNode("br");
+          // 0424 追加父节点属性parent
+          paraBcontent.push(br);
         }
         // 上边这个if，没有else了，这种情况下不存在paraBcontent.length === 0的场景，paraBcontent.length === 0意味着没有endcontainer或者说startContainer===endContainer。
         console.log("paraBcontent", paraBcontent);
@@ -1379,6 +1468,105 @@ export const enter = {
         }, 0);
       });
       return;
+    },
+    withinSingleSpan: function(range, trees, store) {
+      console.log("选中一个文本节点的部分或全部内容");
+      const partAText = range.commonAncestorContainer.nodeValue.substr(
+        0,
+        range.startOffset
+      );
+      console.log("partAText", partAText);
+      const partBText = range.commonAncestorContainer.nodeValue.substr(
+        range.endOffset,
+        range.commonAncestorContainer.nodeValue.length
+      );
+      console.log("partBText", partBText);
+      const currentOperateObj = range.startContainer.parentNode;
+      // 获取相应的虚拟dom的引用
+      // console.log('range',range.startContainer.parentNode)
+      findTargetNode(currentOperateObj, trees).then(async res => {
+        const target = res;
+        console.log("res", res);
+        const splitStartIndex = target.parent.children.findIndex(item => {
+          return target.id === item.id;
+        });
+        console.log(
+          target.parent.children.length === 1,
+          splitStartIndex === 0,
+          partAText === ""
+        );
+
+        // 一个P中只有一个span节点并且这个span节点即将被消除
+        target.text = partAText;
+        if (
+          // target.parent.children.length === 1 &&
+          splitStartIndex === 0 &&
+          partAText === ""
+        ) {
+          console.log("装填空行");
+          const br = await new ElementNode("br");
+          br.parent = target.parent;
+          target.parent.children[0] = br;
+        }
+        const restNodeInP = target.parent.children.splice(
+          splitStartIndex + 1,
+          target.parent.children.length
+        );
+        console.log(restNodeInP);
+        const newPara = await new ElementNode("p");
+        newPara.parent = trees;
+        // 插入位置为target所在的P元素的后一个位置
+        const insertIndex =
+          trees.children.findIndex(item => {
+            return item.id === target.parent.id;
+          }) + 1;
+        // 处理newPara,若有partBText,将partBContainer加到newPara的children的首位;如有restNodeInP,将restNodeInP,加到newPara的末位,最后添加到trees中
+        if (restNodeInP.length !== 0) {
+          restNodeInP.forEach(item => {
+            item.parent = newPara;
+          });
+          newPara.children.push(...restNodeInP);
+          if (partBText) {
+            const partBContainer = await new ElementNode(target.tag);
+            partBContainer.text = partBText;
+            partBContainer.style = target.style;
+            console.log("新的容器", partBContainer);
+            partBContainer.parent = newPara;
+            newPara.children.unshift(partBContainer);
+          }
+        } else {
+          // console.log('该段落后续无元素')
+          if (partBText) {
+            console.log("partBText作为新一行的元素", partBContainer);
+            const partBContainer = await new ElementNode(target.tag);
+            partBContainer.text = partBText;
+            partBContainer.style = target.style;
+            partBContainer.parent = newPara;
+            newPara.children.unshift(partBContainer);
+          } else {
+            // console.log('新一空行')
+            const br = await new ElementNode("br");
+            // 0424 追加父节点属性parent
+            br.parent = newPara;
+            newPara.children.unshift(br);
+          }
+        }
+        newPara.parent = trees;
+        trees.children.splice(insertIndex, 0, newPara);
+        setTimeout(() => {
+          const id = newPara.id;
+          redirectRange(store, {
+            startId: id,
+            endId: id
+          });
+          saveStack(trees, store, {
+            startId: id,
+            // startOffset: partAText.length,
+            endId: id
+            // endOffset: partAText.length
+          });
+        }, 0);
+      });
     }
   },
   sceneOutOfException1: (range, trees, store) => {
@@ -1696,9 +1884,6 @@ export const regularInput = {
   },
   sceneComposiveMode: (wordKeeper, range, trees, store) => {
     console.log("sceneComposiveMode.range", range);
-    // if (range.commonAncestorContainer){
-
-    // }
     const currentOperateObj = range.commonAncestorContainer.parentNode;
     findTargetNode(currentOperateObj, trees).then(res => {
       let target = res;
@@ -1747,10 +1932,378 @@ export const regularInput = {
   }
 };
 export const overwriteRangeInput = {
-  sceneDirectMode: () => {
-    return;
-  },
-  sceneComposiveMode: () => {
-    return;
+  sceneDirectMode: {
+    spanParas: function(keyData, range, trees, store) {
+      console.log("跨p选取", range);
+      // 判定为选区模式
+      // 跨P选取
+      console.log("起点", range.startContainer);
+      // startContainer是一个text节点
+      if (range.startContainer.nodeType === 3) {
+        const endDom = range.endContainer;
+        const startObj = range.startContainer.parentNode;
+        if (endDom.nodeType === 3) {
+          findTargetNode(startObj, trees).then(async res => {
+            const target = res;
+            console.log("target", res);
+            // 获取P节点的id,进行字符串截取
+            // partA
+            const partAText = target.text.substring(0, range.startOffset)+keyData;
+            console.log("partAText", partAText);
+            // partB
+            const partBText = range.endContainer.nodeValue.substr(
+              range.endOffset,
+              range.endContainer.nodeValue.length
+            );
+            // console.log('修改后',target.parent.children)
+            const targetIndex = target.parent.children.findIndex(item => {
+              return target.id === item.id;
+            });
+            console.log("span节点在partA中的索引", targetIndex);
+            //  targetIndex+1为当事节点之后的span节点,从这个索引开始(包括自身)之后的所有节点全部弃置
+            target.parent.children = target.parent.children.slice(
+              0,
+              targetIndex + 1
+            );
+            console.log("A部分", target.parent, target.parent.children);
+            target.parent.children[targetIndex].text = partAText;
+            // 至此，partA已经处理好了
+            const startParaIndex = trees.children.findIndex(item => {
+              return item.id === target.parent.id;
+            });
+            const endParaIndex = trees.children.findIndex(item => {
+              return item.id === range.endContainer.parentNode.parentNode.id;
+            });
+            const endPara = trees.children[endParaIndex];
+            const partBTextIndex = endPara.children.findIndex(item => {
+              return range.endContainer.parentNode.id === item.id;
+            });
+            // 处理partB,接到partA后边
+            const restNodeInP = endPara.children.slice(partBTextIndex);
+            restNodeInP[0].text = partBText;
+            console.log("restNodeInP", restNodeInP);
+            target.parent.children.splice(
+              target.parent.children.length,
+              0,
+              ...restNodeInP
+            );
+            // endPara.children = endPara.children.slice(partBTextIndex);
+            console.log("endPara.children", endPara.children);
+            console.log(startParaIndex, endParaIndex);
+            // 删除沿途的P节点
+            console.log("开始删除");
+            console.log("优化测试");
+            trees.children.splice(
+              startParaIndex + 1,
+              endParaIndex - startParaIndex
+            );
+            clearRange();
+            // 焦点重定向到结束段落的endOffset,在end节点之前的文本弃置
+            setTimeout(() => {
+              const id = target.id;
+              redirectRange(store, {
+                startId: id,
+                startOffset: partAText.length+1,
+                endId: id,
+                endOffset: partAText.length+1
+              });
+              saveStack(trees, store, {
+                startId: id,
+                endId: id
+              });
+            }, 0);
+          });
+          return;
+        } else if (endDom.tagName === "P") {
+          console.log("endDom.tagName === 'P'");
+          findTargetNode(startObj, trees).then(async res => {
+            const target = res;
+            const partAText = target.text.substring(0, range.startOffset);
+            console.log("partAText", partAText);
+
+            const targetIndex = target.parent.children.findIndex(item => {
+              return target.id === item.id;
+            });
+            console.log("span节点在partA中的索引", targetIndex);
+            //  targetIndex+1为当事节点之后的span节点,从这个索引开始(包括自身)之后的所有节点全部弃置
+            target.parent.children = target.parent.children.slice(
+              0,
+              targetIndex + 1
+            );
+            console.log("A部分", target.parent, target.parent.children);
+            target.parent.children[targetIndex].text = partAText;
+
+            const startParaIndex = trees.children.findIndex(item => {
+              return item.id === target.parent.id;
+            });
+            // 再次强调，endContainer是一个P元素
+            const endParaIndex = trees.children.findIndex(item => {
+              return item.id === range.endContainer.id;
+            });
+            trees.children.splice(
+              startParaIndex + 1,
+              endParaIndex - startParaIndex - 1
+            );
+            clearRange();
+            setTimeout(() => {
+              // 新的range应为target，因为新增加的行添加在target之上
+              const id = endDom.id;
+              redirectRange(store, {
+                startId: id,
+                endId: id
+              });
+              saveStack(trees, store, {
+                startId: id,
+                endId: id
+              });
+            }, 0);
+          });
+          return;
+        } else {
+          console.log("意料之外的endDom", endDom);
+          return;
+        }
+      }
+      // startContainer选中了整个P
+      else if (range.startContainer.tagName === "P") {
+        const startDom = range.startContainer;
+        const endDom = range.endContainer;
+        if (endDom.nodeType === 3) {
+          console.log("需要截取endDom字符串", startDom, endDom.parentNode);
+          findTargetNode(endDom.parentNode, trees).then(async res => {
+            const target = res;
+            console.log("endDom", res);
+            const startParaIndex = trees.children.findIndex(
+              item => item.id === startDom.id
+            );
+            const endParaIndex = trees.children.findIndex(
+              item => item.id === res.parent.id
+            );
+            // 截取节点在原P节点中的索引
+            const targetIndex = target.parent.children.findIndex(
+              item => item.id === target.id
+            );
+            const supposevalue = target.text.substring(range.endOffset);
+            console.log("若这是段落中的最后一个子节点，并且将被赋值为空字符串");
+            // 若这是段落中的最后一个子节点，并且将被赋值为空字符串
+            if (supposevalue === "" && targetIndex === 0) {
+              console.log("condition1");
+              const br = await new ElementNode("br");
+              br.parent = target.parent;
+              target.parent.children[targetIndex] = br;
+            } else {
+              console.log("condition2");
+              target.text = supposevalue;
+              const restNodeInP = target.parent.children.slice(targetIndex);
+              target.parent.children = restNodeInP;
+            }
+
+            console.log("splice", startParaIndex, endParaIndex);
+            trees.children.splice(
+              startParaIndex,
+              endParaIndex - startParaIndex - 1
+            );
+
+            clearRange();
+            setTimeout(() => {
+              const id = target.parent.id;
+              redirectRange(store, {
+                startId: id,
+                endId: id
+              });
+              saveStack(trees, store, {
+                startId: id,
+                endId: id
+              });
+            }, 0);
+          });
+
+          return;
+        } else {
+          if (endDom.tagName === "P") {
+            console.log("endDom,完整截取了N个P，计算index即可");
+            const startDom = range.startContainer;
+            const endDom = range.endContainer;
+            const startParaIndex = trees.children.findIndex(
+              item => item.id === startDom.id
+            );
+            const endParaIndex = trees.children.findIndex(
+              item => item.id === endDom.id
+            );
+            findTargetNode(endDom, trees).then(async res => {
+              console.log("splice", res);
+              // const target = res;
+
+              const newPara = await new ElementNode("p");
+              const br = await new ElementNode("br");
+              newPara.parent = trees;
+              br.parent = newPara;
+              newPara.children.push(br);
+              trees.children.splice(
+                startParaIndex,
+                endParaIndex - startParaIndex,
+                newPara
+              );
+              clearRange();
+              setTimeout(() => {
+                const id = newPara.id;
+                redirectRange(store, {
+                  startId: id,
+                  endId: id
+                });
+                saveStack(trees, store, {
+                  startId: id,
+                  endId: id
+                });
+              }, 0);
+            });
+
+            return;
+          }
+        }
+      } else {
+        console.log("意料之外的range");
+        return;
+      }
+    },
+    spanSpans: function(keyData, range, trees, store) {
+      const startObj = range.startContainer.parentNode;
+      console.log("cross span", range.commonAncestorContainer, startObj);
+      findTargetNode(startObj, trees).then(async res => {
+        console.log("res", res);
+        const target = res;
+        const partAText = target.text.substring(0, range.startOffset);
+        const partBText = range.endContainer.nodeValue.substr(
+          range.endOffset,
+          range.endContainer.nodeValue.length
+        );
+
+        const splitStartIndex = target.parent.children.findIndex(
+          item => target.id === item.id
+        );
+        target.text = partAText;
+
+        const splitEndIndex = target.parent.children.findIndex(
+          item => item.id === range.endContainer.parentNode.id
+        );
+        target.parent.children[splitEndIndex].text = partBText;
+        // const restNodeInP = target.parent.children.splice(
+        //   splitEndIndex + 1,
+        //   target.parent.children.length - splitEndIndex + 1
+        // );
+        target.parent.children.splice(
+          splitStartIndex + 1,
+          splitEndIndex - splitStartIndex - 1
+        );
+        cleanEmptySibling(trees);
+        console.log("cishicike", target.parent.children);
+        clearRange();
+        if (target.parent.children.length === 0) {
+          const br = await new ElementNode("br");
+          br.parent = target.parent;
+          target.parent.children.push(br);
+          setTimeout(() => {
+            // 新的range应为target，因为新增加的行添加在target之上
+            const id = target.parent.id;
+            // const offset = partAText.length;
+            redirectRange(store, {
+              // startOffset: offset,
+              startId: id,
+              endId: id
+              // endOffset: offset
+            });
+            saveStack(trees, store, {
+              // startOffset: offset,
+              startId: id,
+              endId: id
+              // endOffset: offset
+            });
+          }, 0);
+          return;
+        } else {
+          setTimeout(() => {
+            // 新的range应为target，因为新增加的行添加在target之上
+            const id =
+              partAText.length > 0
+                ? target.id
+                : target.parent.children[splitEndIndex].id;
+            const offset = partAText.length;
+            redirectRange(store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+            saveStack(trees, store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+          }, 0);
+          return;
+        }
+      });
+      return;
+    },
+    withinSingleSpan: function(keyData, range, trees, store) {
+      console.log("选中一个文本节点的部分或全部内容");
+      const partAText = range.commonAncestorContainer.nodeValue.substr(
+        0,
+        range.startOffset
+      );
+      console.log("partAText", partAText);
+      const partBText = range.commonAncestorContainer.nodeValue.substr(
+        range.endOffset,
+        range.commonAncestorContainer.nodeValue.length
+      );
+      console.log("partBText", partBText);
+      const currentOperateObj = range.commonAncestorContainer.parentNode;
+      // 获取相应的虚拟dom的引用
+      findTargetNode(currentOperateObj, trees).then(async res => {
+        const target = res;
+        const splitStartIndex = target.parent.children.findIndex(item => {
+          return target.id === item.id;
+        });
+        console.log(
+          target.parent.children.length === 1,
+          splitStartIndex === 0,
+          partAText === ""
+        );
+
+        // 一个P中只有一个span节点并且这个span节点即将被消除
+        const newvalue = partAText + partBText;
+        target.text = newvalue;
+        if (
+          target.parent.children.length === 1 &&
+          splitStartIndex === 0 &&
+          newvalue === ""
+        ) {
+          console.log("装填空行");
+          const br = await new ElementNode("br");
+          br.parent = target.parent;
+          target.parent.children[0] = br;
+        }
+        setTimeout(() => {
+          const id = newvalue ? target.id : target.parent.id;
+          const offset = partAText.length;
+          redirectRange(store, {
+            startId: id,
+            startOffset: offset,
+            endId: id,
+            endOffset: offset
+          });
+          saveStack(trees, store, {
+            startId: id,
+            startOffset: offset,
+            endId: id,
+            endOffset: offset
+          });
+        }, 0);
+      });
+    }
   }
+  // sceneComposiveMode: (wordKeeper, range, trees, store) => {
+  //   return;
+  // }
 };
