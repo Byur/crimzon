@@ -1,16 +1,28 @@
 <template>
   <div class="container">
+    <div class="stacklogs">
+      <span>undo-stack:{{ undoLength }}</span>
+      <br />
+      <span>redo-stack:{{ redoLength }}</span>
+    </div>
     <div class="toolbar_simple">
-      <div class="cell">
-        <span>{{ undoLength }}</span>
-        <i class="iconfont icon icon-ziyuan1" @click="actionUndo"></i>
+      <div class="cell" @click="actionUndo">
+        <i class="iconfont icon icon-ziyuan1"></i>
       </div>
-      <div class="cell">
-        <span>{{ redoLength }}</span>
-        <i class="iconfont icon icon-ziyuan" @click="actionRedo"></i>
+      <div class="cell" @click="actionRedo">
+        <i class="iconfont icon icon-ziyuan"></i>
+      </div>
+      <div
+        class="cell"
+        v-for="(item, index) in toolBar"
+        :key="item.name"
+        @click="setStyle(index)"
+      >
+        <i :class="item.srcClass"></i>
       </div>
     </div>
-    <div class="toolbar_fullpower"></div>
+    <!-- <div class="toolbar_fullpower"></div> -->
+    <!-- @click="saveRange" -->
     <div
       id="theGhost"
       ref="wysiwys"
@@ -24,6 +36,8 @@
       @compositionstart="start"
       @compositionend="end"
       @compositionupdate="watcher"
+      @click="checkRange"
+      @mouseup="checkRange"
     ></div>
   </div>
 </template>
@@ -33,15 +47,19 @@ import {
   // saveRange,
   rangeForTextChange,
   findTargetNode
+  // saveRange
 } from "../api/corefunctions";
 import {
   backspace,
   enter,
   regularInput,
-  overwriteRangeInput
+  overwriteRangeInput,
+  refinedNodesByRange_stage1,
+  refinedNodesByRange_stage2
 } from "../api/handleEventsByScene";
 import { getStack, saveStack } from "../api/stack";
-import { redirectRange } from "../api/corefunctions";
+import { redirectRange, isActivated } from "../api/corefunctions";
+import { toolBar } from "./toolBar";
 let _ = require("lodash");
 export default {
   // @mouseleave="checkRange"
@@ -51,8 +69,12 @@ export default {
     this.store = this.$store;
     this.init();
   },
+  mounted() {
+    this.toolBar.push(...toolBar);
+  },
   data() {
     return {
+      toolBar: [],
       // 0521抽象化进程:将外部api文件中的this脱出
       store: {},
       // 20200416,开始插入toolbar概念,追加安静制图机,首先提供的参数效果不能互相覆盖,经整理,只修改样式,不对布局(指视觉上的,实际上只要影响了range,都会造成布局改变)造成影响的可修改项目前有:粗体(fontweight),斜体(italic),删除线(through-line),下划线(underline),突出(bgc),颜色(color),字号(fontsize),边框(border),上下标(vertical-align:super/sub),字体,格式刷,清除格式;
@@ -258,13 +280,14 @@ export default {
         // }, 10);
       },
       deep: true
+    },
+    range: {
+      handler(val) {
+        console.log("watch range", val);
+        this.checkStyle();
+      },
+      deep: true
     }
-    // range: {
-    //   handler(val) {
-    //     console.log("watch range", val);
-    //   },
-    //   deep: true
-    // }
   },
   props: {
     // innerText: {
@@ -280,6 +303,113 @@ export default {
   //   }
   // },
   methods: {
+    checkRange: _.debounce(function() {
+      this.saveRange();
+    }, 50),
+    setStyle(index) {
+      const buttonName = this.toolBar[index].buttonName;
+      console.log(buttonName);
+      // this.saveRange();
+      const res = this.checkStyle();
+      let elementList_Stage2 = [];
+      // 精修
+      switch (res.type) {
+        case "spanParas":
+          elementList_Stage2 = refinedNodesByRange_stage2.spanParas(
+            res.receive,
+            this.trees,
+            this.range
+          );
+          break;
+        case "spanSpans":
+          elementList_Stage2 = refinedNodesByRange_stage2.spanSpans(
+            res.receive,
+            this.trees,
+            this.range
+          );
+          break;
+        case "withinSingleSpan":
+          elementList_Stage2 = refinedNodesByRange_stage2.withinSingleSpan(
+            res.receive,
+            this.trees,
+            this.range
+          );
+          break;
+        case "scenePointMode":
+          elementList_Stage2 = refinedNodesByRange_stage2.scenePointMode(
+            res.receive,
+            this.trees,
+            this.range
+          );
+          break;
+        default:
+          break;
+      }
+      this.toolBar[index].changeStyle(this.toolBar[index], elementList_Stage2);
+
+      // setTimeout(() => {
+      //   rangeForTextChange(this.$store);
+      //   this.saveRange();
+      // }, 0);
+    },
+    checkStyle() {
+      // 不闭合，rangeMode,涉及文本改动
+      let receive = [];
+      if (!this.range.collapsed) {
+        if (this.range.commonAncestorContainer.id === "origin") {
+          // return paragraphs
+          receive = refinedNodesByRange_stage1.spanParas(
+            this.trees,
+            this.range
+          );
+          console.log("spanParas", receive);
+          toolBar.forEach(item => {
+            console.log("item", item);
+            const boolean = isActivated(receive, item.cssAttr);
+            console.log("inside vue instance", boolean);
+            item.isActived(item, boolean);
+          });
+          return { receive, type: "spanParas" };
+        } else if (this.range.commonAncestorContainer.tagName === "P") {
+          receive = refinedNodesByRange_stage1.spanSpans(
+            this.trees,
+            this.range
+          );
+          console.log("spanSpans", receive);
+          // return spans
+          toolBar.forEach(item => {
+            console.log("item", item);
+            const boolean = isActivated(receive, item.cssAttr);
+            console.log("inside vue instance", boolean);
+            item.isActived(item, boolean);
+          });
+          return { receive, type: "spanSpans" };
+        } else if (this.range.commonAncestorContainer.nodeType === 3) {
+          receive = refinedNodesByRange_stage1.withinSingleSpan(
+            this.trees,
+            this.range
+          );
+          console.log("withinSingleSpan", receive);
+          toolBar.forEach(item => {
+            console.log("item", item);
+            const boolean = isActivated(receive, item.cssAttr);
+            console.log("inside vue instance", boolean);
+            item.isActived(item, boolean);
+          });
+          return { receive, type: "withinSingleSpan" };
+          // return span which text in
+        }
+      }
+      // 闭合，pointMode,不涉及文本改动;
+      else {
+        receive = refinedNodesByRange_stage1.scenePointMode(
+          this.trees,
+          this.range
+        );
+        // 添加当前
+        return { receive, type: "scenePointMode" };
+      }
+    },
     // debounce
 
     // events
@@ -322,13 +452,63 @@ export default {
     end() {
       console.log("-----------------end---------------------", event);
       this.wordKeeper = event.data;
-      regularInput.sceneComposiveMode(
-        this.wordKeeper,
-        this.range,
-        this.trees,
-        this.$store
-      );
-      this.directInput = true;
+      console.log("saveRange from core：keydown", this.range);
+      const currentRange = this.range;
+      const pointMode = currentRange.collapsed;
+
+      if (pointMode) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        regularInput.sceneComposiveMode(
+          this.wordKeeper,
+          this.range,
+          this.trees,
+          this.$store
+        );
+        this.directInput = true;
+        return;
+      } else {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        console.log("非常规--连续输入");
+        if (currentRange.commonAncestorContainer.id === "origin") {
+          overwriteRangeInput.sceneDirectMode.spanParas(
+            this.wordKeeper,
+            this.range,
+            this.trees,
+            this.$store
+          );
+          // 这个状态应该作为局部状态，封装在某个被共同引用的js文件中，后续将补充
+          this.directInput = true;
+          return;
+        } else if (
+          currentRange.commonAncestorContainer.tagName === "P" &&
+          currentRange.startContainer !== currentRange.endContainer
+        ) {
+          console.log("from core", currentRange);
+          overwriteRangeInput.sceneComposiveMode.spanSpans(
+            this.wordKeeper,
+            this.range,
+            this.trees,
+            this.$store
+          );
+          this.directInput = true;
+          return;
+        } else if (currentRange.startContainer === currentRange.endContainer) {
+          overwriteRangeInput.sceneDirectMode.withinSingleSpan(
+            this.wordKeeper,
+            this.range,
+            this.trees,
+            this.$store
+          );
+
+          this.directInput = true;
+          return;
+        } else {
+          console.log("意料之外的range", currentRange);
+          return;
+        }
+      }
     },
     // }, 1000),
 
@@ -442,7 +622,11 @@ export default {
         } else {
           // 判定为选区模式
           // 跨P选取
-          console.log("不在同一个文本节点内");
+          console.log(
+            "不在同一个文本节点内",
+            currentRange.startContainer,
+            currentRange.endContainer
+          );
           if (currentRange.commonAncestorContainer.id === "origin") {
             if (this.funcKeyCodes.indexOf(event.keyCode) === -1) {
               event.stopImmediatePropagation();
@@ -750,14 +934,21 @@ export default {
           const ano1 = new ElementNode(
             "span",
             "acdc",
-            { color: "red" },
+            { color: "red", "font-weight": "bold" },
             {},
             []
           );
           const ano2 = new ElementNode(
             "span",
             "lenox",
-            { color: "green" },
+            { color: "green", "font-weight": "bold" },
+            {},
+            []
+          );
+          const ano3 = new ElementNode(
+            "span",
+            "bowy",
+            { color: "pink", "font-weight": "bold" },
             {},
             []
           );
@@ -765,15 +956,18 @@ export default {
           ano1.parent = newPara;
           ano2.id += 2;
           ano2.parent = newPara;
+          ano3.id += 3;
+          ano3.parent = newPara;
           newPara.children.push(newinlineEle);
           newPara.children.push(ano1);
           newPara.children.push(ano2);
+          newPara.children.push(ano3);
 
           this.saveStack(this.trees, this.$store, {
-            startId: ano2.id,
-            startOffset: ano2.text.length,
-            endId: ano2.id,
-            endOffset: ano2.text.length
+            startId: ano3.id,
+            startOffset: ano3.text.length,
+            endId: ano3.id,
+            endOffset: ano3.text.length
           });
         }, 0);
       }, 0);
@@ -858,13 +1052,17 @@ export default {
     display: flex;
     width: 100%;
     .cell {
-      display: flex;
+      // display: flex;
+      box-sizing: border-box;
       width: 25px;
       height: 25px;
-      justify-content: center;
-      align-items: center;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
+      background-color: rgba(255, 255, 255, 1);
+      // justify-content: center;
+      // align-items: center;
+      // border: 1px solid #ccc;
+    }
+    .cell:hover {
+      background-color: rgba(134, 134, 134, 0.3);
     }
   }
   #theGhost {

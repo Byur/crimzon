@@ -7,8 +7,523 @@ import {
   cleanEmptySibling,
   saveRange,
   clearRange
+  // isActivated
 } from "../api/corefunctions";
+// stage1 for check style;stage2 for get exactly tree nodes by range
+// stage1:不改动trees,返回一个多维list供检测样式用
+export const refinedNodesByRange_stage1 = {
+  spanParas: function(trees, range) {
+    if (range.startContainer.nodeType === 3) {
+      if (range.endContainer.nodeType === 3) {
+        // 一个找到关联的trees节点的起点
+        // 获取startContainer所在的P
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        const startIndex = trees.children[startParaIndex].children.findIndex(
+          item => item.id === range.startContainer.parentNode.id
+        );
+        const endParaID = range.startContainer.parentNode.parentNode.id;
+        const endParaIndex = trees.children.findIndex(
+          item => item.id === endParaID
+        );
+        const endIndex = trees.children[startParaIndex].children.findIndex(
+          item => item.id === range.endContainer.parentNode.id
+        );
+        const copyPartOfTrees_startPara = trees.children[
+          startParaIndex
+        ].children.slice(startIndex);
+        const copyPartOfTrees_EndPara = trees.children[
+          endParaIndex
+        ].children.slice(endIndex);
+        const restParas = trees.children.slice(
+          startParaIndex + 1,
+          endParaIndex
+        );
+        const throwOut = [];
+        throwOut.push(copyPartOfTrees_startPara);
+        throwOut.push(...restParas);
+        throwOut.push(copyPartOfTrees_EndPara);
+        return throwOut;
+      } else if (range.endContainer.tagName === "P") {
+        // 一个找到关联的trees节点的起点
+        // 获取startContainer所在的P
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        const startIndex = trees.children[startParaIndex].children.findIndex(
+          item => item.id === range.startContainer.parentNode.id
+        );
+        const endParaID = range.startContainer.parentNode.parentNode.id;
+        const endParaIndex = trees.children.findIndex(
+          item => item.id === endParaID
+        );
+        // const endIndex = trees.children[startParaIndex].findIndex(
+        //   item => item.id === range.endContainer.parentNode.id
+        // );
+        const copyPartOfTrees_startPara = trees.children[
+          startParaIndex
+        ].children.slice(startIndex);
+        // const copyPartOfTrees_EndPara = trees.children[endParaIndex].slice(
+        //   endIndex
+        // );
+        const restParas = trees.children.slice(
+          startParaIndex + 1,
+          endParaIndex
+        );
+        const throwOut = [];
+        throwOut.push(copyPartOfTrees_startPara);
+        throwOut.push(...restParas);
+        // throwOut.push(copyPartOfTrees_EndPara);
+        return throwOut;
+      }
+    } else if (range.startContainer.tagName === "P") {
+      if (range.endContainer.nodeType === 3) {
+        // 一个找到关联的trees节点的起点
+        // 获取startContainer所在的P
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        // const startIndex = trees.children[startParaIndex].findIndex(
+        //   item => item.id === range.startContainer.parentNode.id
+        // );
+        const endParaID = range.startContainer.parentNode.parentNode.id;
+        const endParaIndex = trees.children.findIndex(
+          item => item.id === endParaID
+        );
+        const endIndex = trees.children[startParaIndex].children.findIndex(
+          item => item.id === range.endContainer.parentNode.id
+        );
+        // const copyPartOfTrees_startPara = trees.children[startParaIndex].slice(
+        //   startIndex
+        // );
+        const copyPartOfTrees_EndPara = trees.children[
+          endParaIndex
+        ].children.slice(endIndex);
+        const restParas = trees.children.slice(
+          startParaIndex + 1,
+          endParaIndex
+        );
+        const throwOut = [];
+        // throwOut.push(copyPartOfTrees_startPara);
+        throwOut.push(...restParas);
+        throwOut.push(copyPartOfTrees_EndPara);
+        return throwOut;
+      } else if (range.endContainer.tagName === "P") {
+        // 一个找到关联的trees节点的起点
+        // 获取startContainer所在的P
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        // const startIndex = trees.children[startParaIndex].findIndex(
+        //   item => item.id === range.startContainer.parentNode.id
+        // );
+        const endParaID = range.startContainer.parentNode.parentNode.id;
+        const endParaIndex = trees.children.findIndex(
+          item => item.id === endParaID
+        );
+        // const endIndex = trees.children[startParaIndex].findIndex(
+        //   item => item.id === range.endContainer.parentNode.id
+        // );
+        // const copyPartOfTrees_startPara = trees.children[startParaIndex].slice(
+        //   startIndex
+        // );
+        // const copyPartOfTrees_EndPara = trees.children[endParaIndex].slice(
+        //   endIndex
+        // );
+        const restParas = trees.children.slice(
+          startParaIndex + 1,
+          endParaIndex
+        );
+        const throwOut = [];
+        // throwOut.push(copyPartOfTrees_startPara);
+        throwOut.push(...restParas);
+        // throwOut.push(copyPartOfTrees_EndPara);
+        return throwOut;
+      }
+    }
+  },
+  spanSpans: function(trees, range) {
+    const id = range.startContainer.parentNode.parentNode.id;
+    const effectedPara = trees.children.find(item => item.id === id);
+    const startIndex = effectedPara.children.findIndex(
+      item => item.id === range.startContainer.parentNode.id
+    );
+    const endIndex = effectedPara.children.findIndex(
+      item => item.id === range.endContainer.parentNode.id
+    );
+    const throwOut = effectedPara.children.slice(startIndex, endIndex + 1);
+    return throwOut;
+  },
+  withinSingleSpan: function(trees, range) {
+    const targetPara = trees.children.find(
+      item => item.id === range.startContainer.parentNode.parentNode.id
+    );
+    const targetSpan = targetPara.children.find(
+      item => item.id === range.startContainer.parentNode.id
+    );
+    console.log("withinSingleSpan targetNode", targetSpan);
+    const throwOut = [];
+    throwOut.push(targetSpan);
+    return throwOut;
+  },
+  scenePointMode: function(trees, range) {
+    if (
+      range.startContainer.tagName !== "P" ||
+      range.startContainer.tagName !== "BR"
+    ) {
+      const targetPara = trees.children.find(
+        item => item.id === range.startContainer.parentNode.parentNode.id
+      );
+      const targetSpan = targetPara.children.find(
+        item => item.id === range.startContainer.parentNode.id
+      );
+      console.log("withinSingleSpan targetNode", targetSpan);
+      const throwOut = [];
+      throwOut.push(targetSpan);
+      return throwOut;
+    } else {
+      return [];
+    }
+  }
+};
+// stage2：改动trees,改动后返回精准list，供修改样式用
+export const refinedNodesByRange_stage2 = {
+  spanParas: function(elementList_Stage1, trees, range) {
+    if (range.startContainer.nodeType === 3) {
+      if (range.endContainer.nodeType === 3) {
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        // const endParaID = range.endContainer.parentNode.parentNode.id;
+        // const endParaIndex = trees.children.findIndex(
+        //   item => item.id === endParaID
+        // );
+        const startIndex = elementList_Stage1[0].children.findIndex(
+          item => item.id === range.startContainer.parentNode.id
+        );
+        const endIndex = elementList_Stage1[
+          elementList_Stage1.length - 1
+        ].children.findIndex(
+          item => item.id === range.endContainer.parentNode.id
+        );
+        const partA = elementList_Stage1[0].children[startIndex];
+        const partAText = partA.text.substring(0, range.startOffset);
+        const partAText_rest = partA.text.substring(range.startOffset);
 
+        const partA_rest_container = new ElementNode("span");
+        partA_rest_container.tag = partA.tag;
+        partA_rest_container.text = partAText_rest;
+        partA_rest_container.style = partA.style;
+        partA.text = partAText;
+        elementList_Stage1[0].children.splice(
+          startIndex + 1,
+          0,
+          partA_rest_container
+        );
+        // 处理partB
+        const partB =
+          elementList_Stage1[elementList_Stage1.length - 1].children[endIndex];
+        const partBText = partB.text.substring(0, range.endOffset);
+        const partBText_rest = partB.text.substring(range.endOffset);
+
+        const partB_rest_container = new ElementNode("span");
+        partB_rest_container.tag = partB.tag;
+        partB_rest_container.text = partBText_rest;
+        partB_rest_container.style = partB.style;
+        partB.text = partBText;
+        elementList_Stage1[elementList_Stage1.length - 1].children.splice(
+          endIndex + 1,
+          0,
+          partB_rest_container
+        );
+
+        trees.children[startParaID] = elementList_Stage1[0];
+
+        const elementList_Stage2 = [];
+        elementList_Stage2.push(elementList_Stage1[0].children.slice(1));
+        elementList_Stage2.push(
+          ...elementList_Stage1.slice(1, elementList_Stage1.length - 2)
+        );
+        const lastParaChildren =
+          elementList_Stage1[elementList_Stage1.length - 1].children;
+        elementList_Stage2.push(
+          lastParaChildren.slice(0, lastParaChildren.length - 2)
+        );
+        elementList_Stage2.forEach((item, index) => {
+          trees.children[startParaIndex + index] = item;
+        });
+        return elementList_Stage2;
+      } else if (range.endContainer.tagName === "P") {
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        const startIndex = elementList_Stage1[0].children.findIndex(
+          item => item.id === range.startContainer.parentNode.id
+        );
+        // const endIndex = elementList_Stage1[
+        //   elementList_Stage1.length - 1
+        // ].children.findIndex(
+        //   item => item.id === range.endContainer.parentNode.id
+        // );
+        const partA = elementList_Stage1[0].children[startIndex];
+        const partAText = partA.text.substring(0, range.startOffset);
+        const partAText_rest = partA.text.substring(range.startOffset);
+
+        const partA_rest_container = new ElementNode("span");
+        partA_rest_container.tag = partA.tag;
+        partA_rest_container.text = partAText_rest;
+        partA_rest_container.style = partA.style;
+        partA.text = partAText;
+        elementList_Stage1[0].children.splice(
+          startIndex + 1,
+          0,
+          partA_rest_container
+        );
+        // 处理partB
+        // const partB =
+        //   elementList_Stage1[elementList_Stage1.length - 1].children[endIndex];
+        // const partBText = partB.text.substring(0, range.endOffset);
+        // const partBText_rest = partB.text.substring(range.endOffset);
+
+        // const partB_rest_container = new ElementNode("span");
+        // partB_rest_container.tag = partB.tag;
+        // partB_rest_container.text = partBText_rest;
+        // partB_rest_container.style = partB.style;
+        // partB.text = partBText;
+        // elementList_Stage1[elementList_Stage1.length - 1].children.splice(
+        //   endIndex + 1,
+        //   0,
+        //   partB_rest_container
+        // );
+        const elementList_Stage2 = [];
+        elementList_Stage2.push(elementList_Stage1[0].children.slice(1));
+        elementList_Stage2.push(
+          ...elementList_Stage1.slice(1, elementList_Stage1.length - 1)
+        );
+        // const lastParaChildren =
+        //   elementList_Stage1[elementList_Stage1.length - 1].children;
+        // elementList_Stage2.push(
+        //   lastParaChildren.slice(0, lastParaChildren.length - 2)
+        // );
+        elementList_Stage2.forEach((item, index) => {
+          trees.children[startParaIndex + index] = item;
+        });
+        return elementList_Stage2;
+      }
+    } else if (range.startContainer.tagName === "P") {
+      if (range.endContainer.nodeType === 3) {
+        // const startIndex = elementList_Stage1[0].children.findIndex(
+        //   item => item.id === range.startContainer.parentNode.id
+        // );
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        const endIndex = elementList_Stage1[
+          elementList_Stage1.length - 1
+        ].children.findIndex(
+          item => item.id === range.endContainer.parentNode.id
+        );
+        // const partA = elementList_Stage1[0].children[startIndex];
+        // const partAText = partA.text.substring(0, range.startOffset);
+        // const partAText_rest = partA.text.substring(range.startOffset);
+
+        // const partA_rest_container = new ElementNode("span");
+        // partA_rest_container.tag = partA.tag;
+        // partA_rest_container.text = partAText_rest;
+        // partA_rest_container.style = partA.style;
+        // partA.text = partAText;
+        // elementList_Stage1[0].children.splice(
+        // startIndex + 1,
+        // 0,
+        // partA_rest_container
+        // );
+        // 处理partB
+        const partB =
+          elementList_Stage1[elementList_Stage1.length - 1].children[endIndex];
+        const partBText = partB.text.substring(0, range.endOffset);
+        const partBText_rest = partB.text.substring(range.endOffset);
+
+        const partB_rest_container = new ElementNode("span");
+        partB_rest_container.tag = partB.tag;
+        partB_rest_container.text = partBText_rest;
+        partB_rest_container.style = partB.style;
+        partB.text = partBText;
+        elementList_Stage1[elementList_Stage1.length - 1].children.splice(
+          endIndex + 1,
+          0,
+          partB_rest_container
+        );
+
+        const elementList_Stage2 = [];
+        // head
+        // elementList_Stage2.push(elementList_Stage1[0].children.slice(1));
+        // body
+        elementList_Stage2.push(
+          ...elementList_Stage1.slice(0, elementList_Stage1.length - 2)
+        );
+        // tail
+        const lastParaChildren =
+          elementList_Stage1[elementList_Stage1.length - 1].children;
+        elementList_Stage2.push(
+          lastParaChildren.slice(0, lastParaChildren.length - 2)
+        );
+        elementList_Stage2.forEach((item, index) => {
+          trees.children[startParaIndex + 1 + index] = item;
+        });
+        return elementList_Stage2;
+      } else if (range.endContainer.tagName === "P") {
+        // const startIndex = elementList_Stage1[0].children.findIndex(
+        //   item => item.id === range.startContainer.parentNode.id
+        // );
+        // const endIndex = elementList_Stage1[
+        //   elementList_Stage1.length - 1
+        // ].children.findIndex(
+        //   item => item.id === range.endContainer.parentNode.id
+        // );
+        // const partA = elementList_Stage1[0].children[startIndex];
+        // const partAText = partA.text.substring(0, range.startOffset);
+        // const partAText_rest = partA.text.substring(range.startOffset);
+
+        // const partA_rest_container = new ElementNode("span");
+        // partA_rest_container.tag = partA.tag;
+        // partA_rest_container.text = partAText_rest;
+        // partA_rest_container.style = partA.style;
+        // partA.text = partAText;
+        // elementList_Stage1[0].children.splice(
+        //   startIndex + 1,
+        //   0,
+        //   partA_rest_container
+        // );
+        // 处理partB
+        // const partB =
+        // elementList_Stage1[elementList_Stage1.length - 1].children[endIndex];
+        // const partBText = partB.text.substring(0, range.endOffset);
+        // const partBText_rest = partB.text.substring(range.endOffset);
+
+        // const partB_rest_container = new ElementNode("span");
+        // partB_rest_container.tag = partB.tag;
+        // partB_rest_container.text = partBText_rest;
+        // partB_rest_container.style = partB.style;
+        // partB.text = partBText;
+        // elementList_Stage1[elementList_Stage1.length - 1].children.splice(
+        // endIndex + 1,
+        // 0,
+        // partB_rest_container
+        // );
+        const startParaID = range.startContainer.parentNode.parentNode.id;
+        const startParaIndex = trees.children.findIndex(
+          item => item.id === startParaID
+        );
+        const elementList_Stage2 = [];
+        // elementList_Stage2.push(elementList_Stage1[0].children.slice(1));
+        elementList_Stage2.push(
+          ...elementList_Stage1.slice(0, elementList_Stage1.length - 1)
+        );
+        // const lastParaChildren =
+        //   elementList_Stage1[elementList_Stage1.length - 1].children;
+        // elementList_Stage2.push(
+        //   lastParaChildren.slice(0, lastParaChildren.length - 2)
+        // );
+        elementList_Stage2.forEach((item, index) => {
+          trees.children[startParaIndex + 1 + index] = item;
+        });
+        return elementList_Stage2;
+      }
+    }
+  },
+  spanSpans: function(elementList_Stage1, trees, range) {
+    const startParaID = range.startContainer.parentNode.parentNode.id;
+    const startParaIndex = trees.children.findIndex(
+      item => item.id === startParaID
+    );
+
+    const startIndex = trees.children[startParaIndex].children.findIndex(
+      item => item.id === range.startContainer.parentNode.id
+    );
+    const endIndex = trees.children[startParaIndex].children.findIndex(
+      item => item.id === range.endContainer.parentNode.id
+    );
+    const partA = elementList_Stage1[0];
+    const partAText = partA.text.substring(0, range.startOffset);
+    const partAText_rest = partA.text.substring(range.startOffset);
+    const partA_rest_container = new ElementNode("span");
+    partA_rest_container.tag = partA.tag;
+    partA_rest_container.text = partAText_rest;
+    partA_rest_container.style = partA.style;
+    partA.text = partAText;
+    elementList_Stage1.splice(1, 0, partA_rest_container);
+
+    const partB = elementList_Stage1[elementList_Stage1.length - 1];
+    const partBText = partB.text.substring(0, range.endOffset);
+    const partBText_rest = partB.text.substring(range.endOffset);
+    const partB_rest_container = new ElementNode("span");
+    partB_rest_container.tag = partB.tag;
+    partB_rest_container.text = partBText_rest;
+    partB_rest_container.style = partB.style;
+    partB.text = partBText;
+    // trees.children[startParaIndex].children.splice()
+
+    elementList_Stage1.splice(-1, 0, partB_rest_container);
+    trees.children[startParaIndex].children.splice(
+      startIndex,
+      endIndex - startIndex,
+      ...elementList_Stage1
+    );
+    const elementList_Stage2 = elementList_Stage1.slice(
+      1,
+      elementList_Stage1.length - 2
+    );
+    return elementList_Stage2;
+  },
+  withinSingleSpan: function(elementList_Stage1, trees, range) {
+    const target = elementList_Stage1[0];
+    const targetPara = target.parent;
+    const startIndex = targetPara.children.findIndex(
+      item => item.id === target.id
+    );
+    const partAText = target.text.substring(0, range.startOffset);
+    const partAText_rest = target.text.substring(range.endOffset);
+    const partA_rest_container = new ElementNode("span");
+    partA_rest_container.tag = target.tag;
+    partA_rest_container.text = partAText_rest;
+    partA_rest_container.style = target.style;
+    target.text = partAText;
+    targetPara.children.splice(startIndex, 0, partA_rest_container);
+    // console.log("withinSingleSpan targetNode", targetSpan);
+    const throwOut = [];
+    throwOut.push(partA_rest_container);
+    return throwOut;
+  },
+  scenePointMode: function(trees, range) {
+    console.log("scenePointMode");
+    if (
+      range.startContainer.tagName !== "P" ||
+      range.startContainer.tagName !== "BR"
+    ) {
+      const targetPara = trees.children.find(
+        item => item.id === range.startContainer.parentNode.parentNode.id
+      );
+      const targetSpan = targetPara.children.find(
+        item => item.id === range.startContainer.parentNode.id
+      );
+      console.log("withinSingleSpan targetNode", targetSpan);
+      const throwOut = [];
+      throwOut.push(targetSpan);
+      return throwOut;
+    } else {
+      return [];
+    }
+  }
+};
+// keyBoardEvent
 export const backspace = {
   scenePointMode: (range, trees, store) => {
     console.log("进入", range.commonAncestorContainer);
@@ -600,7 +1115,7 @@ export const backspace = {
               return target.id === item.id;
             });
             console.log("span节点在partA中的索引", targetIndex);
-            //  targetIndex+1为当事节点之后的span节点,从这个索引开始(包括自身)之后的所有节点全部弃置
+            //  targetIndex+1为当事节点之后的span节点,从这个索引开始(包括自身)之后的所有节点全部弃置,取[0,targetIndex+1]区间的值
             target.parent.children = target.parent.children.slice(
               0,
               targetIndex + 1
@@ -620,7 +1135,12 @@ export const backspace = {
             });
             // 处理partB,接到partA后边
             const restNodeInP = endPara.children.slice(partBTextIndex);
+
+            // 改变待拼接数据的parent
+
+            restNodeInP.forEach(item => (item.parent = target.parent));
             restNodeInP[0].text = partBText;
+
             console.log("restNodeInP", restNodeInP);
             target.parent.children.splice(
               target.parent.children.length,
@@ -641,15 +1161,18 @@ export const backspace = {
             // 焦点重定向到结束段落的endOffset,在end节点之前的文本弃置
             setTimeout(() => {
               const id = target.id;
+              const offset = partAText.length;
               redirectRange(store, {
                 startId: id,
-                startOffset: partAText.length,
+                startOffset: offset,
                 endId: id,
-                endOffset: partAText.length
+                endOffset: offset
               });
               saveStack(trees, store, {
                 startId: id,
-                endId: id
+                startOffset: offset,
+                endId: id,
+                endOffset: offset
               });
             }, 0);
           });
@@ -682,19 +1205,24 @@ export const backspace = {
             });
             trees.children.splice(
               startParaIndex + 1,
-              endParaIndex - startParaIndex - 1
+              endParaIndex - startParaIndex
             );
             clearRange();
             setTimeout(() => {
               // 新的range应为target，因为新增加的行添加在target之上
-              const id = endDom.id;
+              const id = target.id;
+              const offset = partAText.length;
               redirectRange(store, {
+                startOffset: offset,
                 startId: id,
-                endId: id
+                endId: id,
+                endOffset: offset
               });
               saveStack(trees, store, {
+                startOffset: offset,
                 startId: id,
-                endId: id
+                endId: id,
+                endOffset: offset
               });
             }, 0);
           });
@@ -741,7 +1269,7 @@ export const backspace = {
             console.log("splice", startParaIndex, endParaIndex);
             trees.children.splice(
               startParaIndex,
-              endParaIndex - startParaIndex - 1
+              endParaIndex - startParaIndex
             );
 
             clearRange();
@@ -1249,6 +1777,7 @@ export const enter = {
       }
       // startContainer选中了整个P
       else if (range.startContainer.tagName === "P") {
+        console.log("startContainer选中了整个P");
         const startDom = range.startContainer;
         const endDom = range.endContainer;
         if (endDom.nodeType === 3) {
@@ -1269,6 +1798,7 @@ export const enter = {
             const supposevalue = target.text.substring(range.endOffset);
             console.log("若这是段落中的最后一个子节点，并且将被赋值为空字符串");
             // 若这是段落中的最后一个子节点，并且将被赋值为空字符串
+
             if (supposevalue === "" && targetIndex === 0) {
               console.log("condition1");
               const br = await new ElementNode("br");
@@ -1278,20 +1808,21 @@ export const enter = {
               console.log("condition2");
               target.text = supposevalue;
               const restNodeInP = target.parent.children.slice(targetIndex);
+              // restNodeInP.forEach(item=>item.parent = target.parent)
               target.parent.children = restNodeInP;
             }
             // if (targetIndex) {}
 
-            // const newPara = await new ElementNode("p");
-            // const br = await new ElementNode("br");
-            // newPara.parent = trees;
-            // br.parent = newPara;
-            // newPara.children.push(br);
+            const newPara = await new ElementNode("p");
+            const br = await new ElementNode("br");
+            newPara.parent = trees;
+            br.parent = newPara;
+            newPara.children.push(br);
             console.log("splice", startParaIndex, endParaIndex);
             trees.children.splice(
               startParaIndex,
-              endParaIndex - startParaIndex - 1
-              // newPara
+              endParaIndex - startParaIndex,
+              newPara
             );
 
             clearRange();
@@ -1884,51 +2415,92 @@ export const regularInput = {
   },
   sceneComposiveMode: (wordKeeper, range, trees, store) => {
     console.log("sceneComposiveMode.range", range);
-    const currentOperateObj = range.commonAncestorContainer.parentNode;
-    findTargetNode(currentOperateObj, trees).then(res => {
-      let target = res;
-      // console.log("正在受影响的实例", target);
-      let currentNodeValue = range.commonAncestorContainer.nodeValue;
-      console.log(currentNodeValue);
-      let startOffset = store.state.prevRangeFactor.startOffset;
-      console.log(
-        wordKeeper,
-        "--------预览结果------------",
-        currentNodeValue.substring(0, startOffset) + wordKeeper
+    if (range.startContainer.nodeType === 3) {
+      console.log("直球！");
+      const currentOperateObj = range.commonAncestorContainer.parentNode;
+      findTargetNode(currentOperateObj, trees).then(res => {
+        let target = res;
+        console.log(
+          "正在受影响的实例",
+          range.startContainer,
+          range.startOffset,
+          range.startOffset + wordKeeper.length
+        );
+        let currentNodeValue = range.commonAncestorContainer.nodeValue;
+        console.log(currentNodeValue);
+        let startOffset = store.state.prevRangeFactor.startOffset;
+        console.log(
+          wordKeeper,
+          "--------预览结果------------",
+          currentNodeValue.substring(0, startOffset) + wordKeeper
+        );
+        console.log(
+          "准备工作",
+          store.state.prevRangeFactor.startTextTankAncestor
+        );
+        // console.log(window.getSelection().getRangeAt(0));
+        saveRange(store);
+        // saveStack(trees, store, {
+        //   startId: target.id,
+        //   startOffset: target.text.length,
+        //   endId: target.id,
+        //   endOffset: target.text.length
+        // });
+        target.text = currentNodeValue;
+        // 需要在clearRange之前
+        const offset = range.startOffset + wordKeeper.length;
+        clearRange();
+        console.log("结束工作", target.text);
+        // console.log(window.getSelection().getRangeAt(0));
+        setTimeout(() => {
+          const id = target.id;
+          redirectRange(store, {
+            startId: id,
+            startOffset: offset,
+            endId: id,
+            endOffset: offset
+          });
+          saveStack(trees, store, {
+            startId: id,
+            startOffset: offset,
+            endId: id,
+            endOffset: offset
+          });
+        }, 0);
+        return;
+      });
+    } else if (range.startContainer.tagName === "P") {
+      // 空段落
+      // 节省性能，不用find方法
+      const target = trees.children.find(
+        item => item.id === range.startContainer.id
       );
-      console.log(
-        "准备工作",
-        store.state.prevRangeFactor.startTextTankAncestor
-      );
-      console.log(window.getSelection().getRangeAt(0));
-      saveRange(store);
-      // saveStack(trees, store, {
-      //   startId: target.id,
-      //   startOffset: target.text.length,
-      //   endId: target.id,
-      //   endOffset: target.text.length
-      // });
-      target.text = currentNodeValue;
+      const newSpan = new ElementNode("span", wordKeeper);
+      newSpan.parent = target;
+      if (target.children.length === 1 && target.children[0].tag === "br") {
+        target.children.splice(0, 1, newSpan);
+      } else {
+        console.log("意料之外的target.children");
+        return;
+      }
       clearRange();
-      console.log("结束工作", target.text);
-      // console.log(window.getSelection().getRangeAt(0));
       setTimeout(() => {
+        const id = newSpan.id;
         redirectRange(store, {
-          startId: target.id,
-          startOffset: target.text.length,
-          endId: target.id,
-          endOffset: target.text.length
+          startId: id,
+          startOffset: newSpan.text.length,
+          endId: id,
+          endOffset: newSpan.text.length
         });
         saveStack(trees, store, {
-          startId: target.id,
-          startOffset: target.text.length,
-          endId: target.id,
-          endOffset: target.text.length
+          startId: id,
+          startOffset: newSpan.text.length,
+          endId: id,
+          endOffset: newSpan.text.length
         });
       }, 0);
-      // wordKeeper = "";
-      // console.log(target, trees);
-    });
+      return;
+    }
   }
 };
 export const overwriteRangeInput = {
@@ -1948,7 +2520,8 @@ export const overwriteRangeInput = {
             console.log("target", res);
             // 获取P节点的id,进行字符串截取
             // partA
-            const partAText = target.text.substring(0, range.startOffset)+keyData;
+            const partAText =
+              target.text.substring(0, range.startOffset) + keyData;
             console.log("partAText", partAText);
             // partB
             const partBText = range.endContainer.nodeValue.substr(
@@ -1981,6 +2554,7 @@ export const overwriteRangeInput = {
             // 处理partB,接到partA后边
             const restNodeInP = endPara.children.slice(partBTextIndex);
             restNodeInP[0].text = partBText;
+            restNodeInP.forEach(item => (item.parent = target.parent.id));
             console.log("restNodeInP", restNodeInP);
             target.parent.children.splice(
               target.parent.children.length,
@@ -2001,24 +2575,28 @@ export const overwriteRangeInput = {
             // 焦点重定向到结束段落的endOffset,在end节点之前的文本弃置
             setTimeout(() => {
               const id = target.id;
+              const offset = partAText.length;
               redirectRange(store, {
                 startId: id,
-                startOffset: partAText.length+1,
+                startOffset: offset,
                 endId: id,
-                endOffset: partAText.length+1
+                endOffset: offset
               });
               saveStack(trees, store, {
+                startOffset: offset,
                 startId: id,
-                endId: id
+                endId: id,
+                endOffset: offset
               });
             }, 0);
           });
           return;
         } else if (endDom.tagName === "P") {
-          console.log("endDom.tagName === 'P'");
+          console.log("endDom.tagName === 'P'in input");
           findTargetNode(startObj, trees).then(async res => {
             const target = res;
-            const partAText = target.text.substring(0, range.startOffset);
+            const partAText =
+              target.text.substring(0, range.startOffset) + keyData;
             console.log("partAText", partAText);
 
             const targetIndex = target.parent.children.findIndex(item => {
@@ -2042,19 +2620,23 @@ export const overwriteRangeInput = {
             });
             trees.children.splice(
               startParaIndex + 1,
-              endParaIndex - startParaIndex - 1
+              endParaIndex - startParaIndex
             );
             clearRange();
             setTimeout(() => {
               // 新的range应为target，因为新增加的行添加在target之上
-              const id = endDom.id;
+              const id = target.id;
               redirectRange(store, {
                 startId: id,
-                endId: id
+                startOffset: partAText.length,
+                endId: id,
+                endOffset: partAText.length
               });
               saveStack(trees, store, {
                 startId: id,
-                endId: id
+                startOffset: partAText.length,
+                endId: id,
+                endOffset: partAText.length
               });
             }, 0);
           });
@@ -2069,7 +2651,11 @@ export const overwriteRangeInput = {
         const startDom = range.startContainer;
         const endDom = range.endContainer;
         if (endDom.nodeType === 3) {
-          console.log("需要截取endDom字符串", startDom, endDom.parentNode);
+          console.log(
+            "需要截取endDom字符串 in  input",
+            startDom,
+            endDom.parentNode
+          );
           findTargetNode(endDom.parentNode, trees).then(async res => {
             const target = res;
             console.log("endDom", res);
@@ -2083,7 +2669,9 @@ export const overwriteRangeInput = {
             const targetIndex = target.parent.children.findIndex(
               item => item.id === target.id
             );
-            const supposevalue = target.text.substring(range.endOffset);
+            // const partAText =
+            const supposevalue =
+              keyData + target.text.substring(range.endOffset);
             console.log("若这是段落中的最后一个子节点，并且将被赋值为空字符串");
             // 若这是段落中的最后一个子节点，并且将被赋值为空字符串
             if (supposevalue === "" && targetIndex === 0) {
@@ -2101,19 +2689,23 @@ export const overwriteRangeInput = {
             console.log("splice", startParaIndex, endParaIndex);
             trees.children.splice(
               startParaIndex,
-              endParaIndex - startParaIndex - 1
+              endParaIndex - startParaIndex
             );
 
             clearRange();
             setTimeout(() => {
-              const id = target.parent.id;
+              const id = target.id;
               redirectRange(store, {
                 startId: id,
-                endId: id
+                startOffset: keyData.length,
+                endId: id,
+                endOffset: keyData.length
               });
               saveStack(trees, store, {
                 startId: id,
-                endId: id
+                startOffset: keyData.length,
+                endId: id,
+                endOffset: keyData.length
               });
             }, 0);
           });
@@ -2121,7 +2713,7 @@ export const overwriteRangeInput = {
           return;
         } else {
           if (endDom.tagName === "P") {
-            console.log("endDom,完整截取了N个P，计算index即可");
+            console.log("endDom,完整截取了N个P，计算index即可 in input");
             const startDom = range.startContainer;
             const endDom = range.endContainer;
             const startParaIndex = trees.children.findIndex(
@@ -2135,10 +2727,10 @@ export const overwriteRangeInput = {
               // const target = res;
 
               const newPara = await new ElementNode("p");
-              const br = await new ElementNode("br");
+              const newSpan = await new ElementNode("span", keyData);
               newPara.parent = trees;
-              br.parent = newPara;
-              newPara.children.push(br);
+              newSpan.parent = newPara;
+              newPara.children.push(newSpan);
               trees.children.splice(
                 startParaIndex,
                 endParaIndex - startParaIndex,
@@ -2146,18 +2738,21 @@ export const overwriteRangeInput = {
               );
               clearRange();
               setTimeout(() => {
-                const id = newPara.id;
+                const id = newSpan.id;
                 redirectRange(store, {
                   startId: id,
-                  endId: id
+                  startOffset: newSpan.text.length,
+                  endId: id,
+                  endOffset: newSpan.text.length
                 });
                 saveStack(trees, store, {
                   startId: id,
-                  endId: id
+                  startOffset: newSpan.text.length,
+                  endId: id,
+                  endOffset: newSpan.text.length
                 });
               }, 0);
             });
-
             return;
           }
         }
@@ -2172,7 +2767,7 @@ export const overwriteRangeInput = {
       findTargetNode(startObj, trees).then(async res => {
         console.log("res", res);
         const target = res;
-        const partAText = target.text.substring(0, range.startOffset);
+        const partAText = target.text.substring(0, range.startOffset) + keyData;
         const partBText = range.endContainer.nodeValue.substr(
           range.endOffset,
           range.endContainer.nodeValue.length
@@ -2248,10 +2843,9 @@ export const overwriteRangeInput = {
     },
     withinSingleSpan: function(keyData, range, trees, store) {
       console.log("选中一个文本节点的部分或全部内容");
-      const partAText = range.commonAncestorContainer.nodeValue.substr(
-        0,
-        range.startOffset
-      );
+      const partAText =
+        range.commonAncestorContainer.nodeValue.substr(0, range.startOffset) +
+        keyData;
       console.log("partAText", partAText);
       const partBText = range.commonAncestorContainer.nodeValue.substr(
         range.endOffset,
@@ -2274,6 +2868,7 @@ export const overwriteRangeInput = {
         // 一个P中只有一个span节点并且这个span节点即将被消除
         const newvalue = partAText + partBText;
         target.text = newvalue;
+        // 复用部分，后续可删除
         if (
           target.parent.children.length === 1 &&
           splitStartIndex === 0 &&
@@ -2302,8 +2897,97 @@ export const overwriteRangeInput = {
         }, 0);
       });
     }
+  },
+  sceneComposiveMode: {
+    spanSpans: function(keyData, range, trees, store) {
+      const startObj = range.startContainer.parentNode;
+      console.log("cross span", range.startContainer, startObj);
+      findTargetNode(startObj, trees).then(async res => {
+        console.log("res", res);
+        const target = res;
+        const partAText =
+          range.startContainer.nodeValue.substring(0, range.startOffset) +
+          keyData;
+        console.log("partAText", partAText);
+        let partBText = "";
+        let splitEndIndex = -1;
+        if (range.endContainer.nodeType === 3) {
+          partBText = range.endContainer.nodeValue.substr(
+            range.endOffset,
+            range.endContainer.nodeValue.length
+          );
+          splitEndIndex = target.parent.children.findIndex(
+            item => item.id === range.endContainer.parentNode.id
+          );
+        } else if (range.endContainer.tagName === "P") {
+          partBText = "";
+          splitEndIndex = target.parent.children.length - 1;
+        }
+        console.log("splitEndIndex", splitEndIndex);
+        const splitStartIndex = target.parent.children.findIndex(
+          item => target.id === item.id
+        );
+        target.text = partAText;
+
+        target.parent.children[splitEndIndex].text = partBText;
+        // const restNodeInP = target.parent.children.splice(
+        //   splitEndIndex + 1,
+        //   target.parent.children.length - splitEndIndex + 1
+        // );
+        target.parent.children.splice(
+          splitStartIndex + 1,
+          splitEndIndex - splitStartIndex - 1
+        );
+        cleanEmptySibling(trees);
+        console.log("cishicike", target.parent.children);
+        clearRange();
+        if (target.parent.children.length === 0) {
+          const br = await new ElementNode("br");
+          br.parent = target.parent;
+          target.parent.children.push(br);
+          setTimeout(() => {
+            // 新的range应为target，因为新增加的行添加在target之上
+            const id = target.id;
+            const offset = partAText.length;
+            redirectRange(store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+            saveStack(trees, store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+          }, 0);
+          return;
+        } else {
+          setTimeout(() => {
+            // 新的range应为target，因为新增加的行添加在target之上
+            const id =
+              partAText.length > 0
+                ? target.id
+                : target.parent.children[splitEndIndex].id;
+            const offset = partAText.length;
+            redirectRange(store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+            saveStack(trees, store, {
+              startOffset: offset,
+              startId: id,
+              endId: id,
+              endOffset: offset
+            });
+          }, 0);
+          return;
+        }
+      });
+      return;
+    }
   }
-  // sceneComposiveMode: (wordKeeper, range, trees, store) => {
-  //   return;
-  // }
 };

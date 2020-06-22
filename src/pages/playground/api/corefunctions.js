@@ -1,5 +1,22 @@
-// 保存range要素至data和vuex
-
+/**
+ * @description 公共API，检测某段range对应的虚拟元素的list中是否全都含有特定的样式，返回一个布尔值
+ * @param {Array} treedNodes_split
+ * @param {String} cssAttr
+ * @returns {Boolean}
+ */
+export function isActivated(treedNodes_split, cssAttr) {
+  const attrPair = cssAttr.split("_");
+  const flaten = treedNodes_split.flat(1);
+  console.log(flaten.length);
+  if (flaten.length > 0) {
+    return flaten.every(item => {
+      console.log("item.style:", item.style);
+      console.log("targetStyle:", item.style[attrPair[0]], attrPair[1]);
+      return item.style[attrPair[0]] === attrPair[1];
+    });
+  }
+  return false;
+}
 export function cleanEmptySibling(tree) {
   tree.children.forEach(function(item, index) {
     if (item.children.length > 0) {
@@ -25,7 +42,7 @@ export function clearRange() {
 //   console.log(trees,range)
 
 // }
-
+// 保存range要素至data和vuex
 export function saveRange(store) {
   if (window.getSelection().getRangeAt(0)) {
     // this.range = window.getSelection().getRangeAt(0);
