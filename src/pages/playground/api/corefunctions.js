@@ -1,3 +1,4 @@
+let _ = require("lodash");
 /**
  * @description 公共API，检测某段range对应的虚拟元素的list中是否全都含有特定的样式，返回一个布尔值
  * @param {Array} treedNodes_split
@@ -7,9 +8,13 @@
 export function isActivated(treedNodes_split, cssAttr) {
   const attrPair = cssAttr.split("_");
   const flaten = treedNodes_split.flat(1);
-  console.log(flaten.length);
-  if (flaten.length > 0) {
-    return flaten.every(item => {
+  const afterFilter = flaten.filter(item => {
+    return item.tag !== "br" && item.tag !== "p";
+  });
+  console.log("flaten", flaten);
+  console.log("afterFilter", afterFilter);
+  if (afterFilter.length > 0) {
+    return afterFilter.every(item => {
       console.log("item.style:", item.style);
       console.log("targetStyle:", item.style[attrPair[0]], attrPair[1]);
       return item.style[attrPair[0]] === attrPair[1];
@@ -74,7 +79,7 @@ export function rangeForTextChange(store, offsetFluctuation = 0) {
     endTextTankAncestor = document.getElementById(
       rangeAfter.endTextTankAncestor.id
     );
-  console.log(startTextTankAncestor, endTextTankAncestor);
+  console.log("teeeeeees", _.cloneDeep(rangeAfter));
   let startContainer = startTextTankAncestor.childNodes[0];
   let endContainer = endTextTankAncestor.childNodes[0];
 

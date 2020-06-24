@@ -31,13 +31,14 @@
       @beforepaste="handleBeforePaste"
       @paste="handlePasteAction"
       @input="catchInput"
-      @keydown="exectionRestricting"
+      @keydown="handlerInput"
       @keypress="donothing"
       @compositionstart="start"
       @compositionend="end"
       @compositionupdate="watcher"
       @click="checkRange"
-      @mouseup="checkRange"
+      @mouseup="checkRangeWhenNoCollapsed"
+      @mouseleave="checkRangeWhenNoCollapsed"
     ></div>
   </div>
 </template>
@@ -50,13 +51,16 @@ import {
   // saveRange
 } from "../api/corefunctions";
 import {
-  backspace,
-  enter,
-  regularInput,
-  overwriteRangeInput,
+  // backspace,
+  // enter,
+  // regularInput,
+  // overwriteRangeInput,
   refinedNodesByRange_stage1,
   refinedNodesByRange_stage2
-} from "../api/handleEventsByScene";
+} from "../api/refinement";
+import { regularInput, overwriteRangeInput } from "../api/handleInputEvent";
+import enter from "../api/handleBreakLine";
+import backspace from "../api/handleBackSpace";
 import { getStack, saveStack } from "../api/stack";
 import { redirectRange, isActivated } from "../api/corefunctions";
 import { toolBar } from "./toolBar";
@@ -303,6 +307,12 @@ export default {
   //   }
   // },
   methods: {
+    checkRangeWhenNoCollapsed: _.debounce(function() {
+      if (this.range && !this.range.collapsed) {
+        this.saveRange();
+      }
+      return;
+    }, 50),
     checkRange: _.debounce(function() {
       this.saveRange();
     }, 50),
@@ -311,6 +321,7 @@ export default {
       console.log(buttonName);
       // this.saveRange();
       const res = this.checkStyle();
+      console.log("ready to setStyle", _.cloneDeep(res.receive));
       let elementList_Stage2 = [];
       // 精修
       switch (res.type) {
@@ -332,7 +343,8 @@ export default {
           elementList_Stage2 = refinedNodesByRange_stage2.withinSingleSpan(
             res.receive,
             this.trees,
-            this.range
+            this.range,
+            this.$store
           );
           break;
         case "scenePointMode":
@@ -343,14 +355,16 @@ export default {
           );
           break;
         default:
+          console.log("default", res.type);
           break;
       }
-      this.toolBar[index].changeStyle(this.toolBar[index], elementList_Stage2);
-
-      // setTimeout(() => {
-      //   rangeForTextChange(this.$store);
-      //   this.saveRange();
-      // }, 0);
+      console.log("elementList_Stage2 from core", elementList_Stage2);
+      this.toolBar[index].changeStyle(elementList_Stage2);
+      setTimeout(() => {
+        rangeForTextChange(this.$store);
+        // window.sleep()
+        this.saveRange();
+      }, 1);
     },
     checkStyle() {
       // 不闭合，rangeMode,涉及文本改动
@@ -367,34 +381,36 @@ export default {
             console.log("item", item);
             const boolean = isActivated(receive, item.cssAttr);
             console.log("inside vue instance", boolean);
-            item.isActived(item, boolean);
+            item.isActived(boolean);
           });
           return { receive, type: "spanParas" };
-        } else if (this.range.commonAncestorContainer.tagName === "P") {
+        } else if (
+          this.range.commonAncestorContainer.tagName === "P" &&
+          this.range.startContainer !== this.range.endContainer
+        ) {
           receive = refinedNodesByRange_stage1.spanSpans(
             this.trees,
             this.range
           );
           console.log("spanSpans", receive);
-          // return spans
           toolBar.forEach(item => {
             console.log("item", item);
             const boolean = isActivated(receive, item.cssAttr);
             console.log("inside vue instance", boolean);
-            item.isActived(item, boolean);
+            item.isActived(boolean);
           });
           return { receive, type: "spanSpans" };
-        } else if (this.range.commonAncestorContainer.nodeType === 3) {
+        } else if (this.range.startContainer === this.range.endContainer) {
           receive = refinedNodesByRange_stage1.withinSingleSpan(
             this.trees,
             this.range
           );
-          console.log("withinSingleSpan", receive);
+          console.log("withinSingleSpan from core", receive);
           toolBar.forEach(item => {
             console.log("item", item);
             const boolean = isActivated(receive, item.cssAttr);
             console.log("inside vue instance", boolean);
-            item.isActived(item, boolean);
+            item.isActived(boolean);
           });
           return { receive, type: "withinSingleSpan" };
           // return span which text in
@@ -406,6 +422,12 @@ export default {
           this.trees,
           this.range
         );
+        toolBar.forEach(item => {
+          console.log("item", item);
+          const boolean = isActivated(receive, item.cssAttr);
+          console.log("inside vue instance", boolean);
+          item.isActived(boolean);
+        });
         // 添加当前
         return { receive, type: "scenePointMode" };
       }
@@ -533,8 +555,8 @@ export default {
       // 删除、粘贴、剪切、退格,在这里执行删除操作
       // 使用剪贴板内容的时候,需要计算剪贴板内容的长度,然后再与startOffset作为新的startOffset
     },
-    // exectionRestricting: _.throttle(async function(event) {
-    async exectionRestricting() {
+    // handlerInput: _.throttle(async function(event) {
+    async handlerInput() {
       // event.stopImmediatePropagation();
       // event.preventDefault();
       // if (this.funcKeyCodes.indexOf(event.keyCode) !== -1) {
