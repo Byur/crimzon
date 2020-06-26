@@ -313,12 +313,12 @@ export const regularInput = {
         // 求partA.text
         const partAText = currentNodeValue.substring(0, range.startOffset);
         target.text = partAText;
-        
+
         console.log("partAText", partAText);
         // 求新输入部分
         const newStyleSpan = new ElementNode(target.tag, wordKeeper, style);
         newStyleSpan.parent = target.parent;
-        console.log('newStyleSpan',newStyleSpan)
+        console.log("newStyleSpan", newStyleSpan);
         // 求partB
         const partBText = currentNodeValue.substring(
           range.startOffset + wordKeeper.length
@@ -332,13 +332,13 @@ export const regularInput = {
         partBContainer.id += 1;
         partBContainer.parent = target.parent;
 
-        console.log('partBContainer',partBContainer)
+        console.log("partBContainer", partBContainer);
         // 插入兄弟节点中
         const targetIndex = target.parent.children.findIndex(
           item => item.id === target.id
         );
         target.parent.children.splice(
-          targetIndex+1,
+          targetIndex + 1,
           0,
           newStyleSpan,
           partBContainer

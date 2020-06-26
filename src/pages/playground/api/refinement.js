@@ -806,7 +806,7 @@ export const refinedNodesByRange_stage2 = {
         startId: range.startContainer.parentNode.id,
         endId: range.startContainer.parentNode.id,
         startOffset: range.startOffset,
-        endOffset: range.endOffset,
+        endOffset: range.endOffset
       };
       setTimeout(function() {
         redirectRange(store, _.cloneDeep(forNewRange));

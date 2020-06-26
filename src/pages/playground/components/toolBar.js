@@ -1,9 +1,9 @@
-import { 
-  bold, 
+import {
+  bold,
   italic,
-  underline, 
+  underline
   // deleteLine
- } from "./buttons";
+} from "./buttons";
 export const toolBar = [
   // {
   //   cssAttrName: "icon-weibiaoti1",
@@ -278,7 +278,7 @@ export const toolBar = [
   //   }
   // },
   bold,
-  underline,
+  underline
   //   暂时作展示作用
   //   {
   //     cssAttrName: "font-weight_bold",

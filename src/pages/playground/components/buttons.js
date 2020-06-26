@@ -2,7 +2,7 @@ const paintItAll = function(cssAttr, elementList, theSilentCartoGrapher) {
   const cssAttrName = cssAttr.split("_")[0];
   const cssAttrValue = cssAttr.split("_")[1];
   if (theSilentCartoGrapher && elementList[0]) {
-    Object.assign(theSilentCartoGrapher,elementList[0].style)
+    Object.assign(theSilentCartoGrapher, elementList[0].style);
     theSilentCartoGrapher[cssAttrName] = cssAttrValue;
     console.log("修改制图机", theSilentCartoGrapher);
     return;

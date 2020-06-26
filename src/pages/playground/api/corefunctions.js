@@ -45,7 +45,7 @@ export function clearRange() {
 }
 // 判定为选区模式时，处理选取中的文本;样式更换/文本覆盖/删除/换行,但操作微调太多，暂不考虑
 // export function rangeDealer(trees,range){
-  // console.log(trees,range)
+// console.log(trees,range)
 // }
 // 保存range要素至data和vuex
 export function saveRange(store) {
