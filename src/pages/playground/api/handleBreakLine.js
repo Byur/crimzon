@@ -13,9 +13,10 @@ import {
 export default {
   // 起点和终点在同一个之文本节点内
   // 如果range.commonAncestorContainer的节点类型为text(nodeType===3),则证明当前是一个文本节点,使用他的父节点parentNode作为currentObject;如果不是文本节点,则证明有可能发生了跨节点选取或者P级元素中存在span的元素节点和对应的文本节点
-  scenePointMode: function(range, trees, store) {
+  scenePointMode: function(range, trees, store, currentStyle) {
     event.stopImmediatePropagation();
     event.preventDefault();
+    console.log("currentStyle", currentStyle);
     const partAText = range.commonAncestorContainer.nodeValue.substr(
       0,
       range.startOffset
@@ -27,6 +28,7 @@ export default {
     );
 
     const currentOperateObj = range.commonAncestorContainer.parentNode;
+    // console.log("currentOperateObj in breakline",currentOperateObj.style)
     // 获取相应的虚拟dom的引用
     findTargetNode(currentOperateObj, trees).then(async res => {
       const target = res;
@@ -57,7 +59,7 @@ export default {
         // 组装新一行的元素节点
         const newPara = await new ElementNode("p");
         const br = await new ElementNode("br");
-
+        currentStyle = target.style;
         if (partBText) {
           const partBContainer = await new ElementNode();
           partBContainer.tag = target.tag;

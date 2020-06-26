@@ -1,6 +1,7 @@
 import { 
   bold, 
-  italic, 
+  italic,
+  underline, 
   // deleteLine
  } from "./buttons";
 export const toolBar = [
@@ -262,18 +263,7 @@ export const toolBar = [
   //     }
   //   },
   // {
-  //   cssAttrName: "text-decoration_underline",
-  //   srcClass: "iconfont icon icon-xiahuaxian",
 
-  //   add: () => {
-  //     // 撤销
-  //     return;
-  //   },
-  //   remove: () => {
-  //     // 添加
-  //     return;
-  //   }
-  // },
   // {
   //   cssAttrName: "icon-Word",
   //   srcClass: "iconfont icon icon-Word",
@@ -287,7 +277,8 @@ export const toolBar = [
   //     return;
   //   }
   // },
-  bold
+  bold,
+  underline,
   //   暂时作展示作用
   //   {
   //     cssAttrName: "font-weight_bold",

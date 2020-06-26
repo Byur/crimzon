@@ -1,22 +1,23 @@
-let _ = require("lodash");
+// let _ = require("lodash");
 /**
  * @description 公共API，检测某段range对应的虚拟元素的list中是否全都含有特定的样式，返回一个布尔值
  * @param {Array} treedNodes_split
  * @param {String} cssAttr
  * @returns {Boolean}
  */
-export function isActivated(treedNodes_split, cssAttr) {
+export function isAllActivated(treedNodes_split, cssAttr) {
+  // console.log("treedNodes_split", treedNodes_split);
   const attrPair = cssAttr.split("_");
   const flaten = treedNodes_split.flat(1);
   const afterFilter = flaten.filter(item => {
     return item.tag !== "br" && item.tag !== "p";
   });
-  console.log("flaten", flaten);
-  console.log("afterFilter", afterFilter);
+  // console.log("flaten", flaten);
+  // console.log("afterFilter", afterFilter);
   if (afterFilter.length > 0) {
     return afterFilter.every(item => {
-      console.log("item.style:", item.style);
-      console.log("targetStyle:", item.style[attrPair[0]], attrPair[1]);
+      // console.log("item.style:", item.style);
+      // console.log("targetStyle:", item.style[attrPair[0]], attrPair[1]);
       return item.style[attrPair[0]] === attrPair[1];
     });
   }
@@ -44,8 +45,7 @@ export function clearRange() {
 }
 // 判定为选区模式时，处理选取中的文本;样式更换/文本覆盖/删除/换行,但操作微调太多，暂不考虑
 // export function rangeDealer(trees,range){
-//   console.log(trees,range)
-
+  // console.log(trees,range)
 // }
 // 保存range要素至data和vuex
 export function saveRange(store) {
@@ -79,9 +79,10 @@ export function rangeForTextChange(store, offsetFluctuation = 0) {
     endTextTankAncestor = document.getElementById(
       rangeAfter.endTextTankAncestor.id
     );
-  console.log("teeeeeees", _.cloneDeep(rangeAfter));
-  let startContainer = startTextTankAncestor.childNodes[0];
-  let endContainer = endTextTankAncestor.childNodes[0];
+  // console.log("teeeeeees", _.cloneDeep(rangeAfter));
+  let startContainer =
+    startTextTankAncestor.childNodes[0] || startTextTankAncestor;
+  let endContainer = endTextTankAncestor.childNodes[0] || endTextTankAncestor;
 
   // console.log("startContainer", startTextTankAncestor, startContainer);
   newRange.setStart(startContainer, rangeAfter.startOffset + offsetFluctuation);
@@ -94,7 +95,11 @@ export function rangeForTextChange(store, offsetFluctuation = 0) {
 }
 export function redirectRange(store, forNewRange) {
   // console.log("设置指定range", forNewRange.startId);
-  // console.log(document.getElementById(forNewRange.startId));
+  // console.log(
+  //   "test get dom",
+  //   forNewRange.startId,
+  //   document.getElementById(forNewRange.startId)
+  // );
   store.commit("saveRangeBeforeTextChange", {
     rangeFactor: {
       startTextTankAncestor: document.getElementById(forNewRange.startId),
@@ -103,9 +108,9 @@ export function redirectRange(store, forNewRange) {
       endOffset: forNewRange.endOffset || 0
     }
   });
-  setTimeout(() => {
-    rangeForTextChange(store);
-  }, 3);
+  // setTimeout(() => {
+  rangeForTextChange(store);
+  // }, 0);
 }
 // 每次遍历节点的路径
 let currentPath = [];
@@ -144,16 +149,16 @@ export async function findTargetNode(htmlNode, trees) {
   //   res.push(nodeFullId);
   // }
 
-  console.log("matcher", res);
+  // console.log("matcher", res);
   // 通过路径获取落点容器的引用,从最外层origin的children开始查找,找到数组的倒数第二位节点作容器,即length-2的元素节点并返回
   for (let i = 0; i < res.length; i++) {
-    console.log(`第${i}次匹配,当前节点为：`, currentposi, "匹配ID为：", res[i]);
+    // console.log(`第${i}次匹配,当前节点为：`, currentposi, "匹配ID为：", res[i]);
     // 若当前遍历到的节点没有子节点
     // console.log(`第${i}次查询的对象是:`, currentposi);
     if (currentposi.children.length !== 0) {
       currentposi = currentposi.children.find(item => {
-        console.log("此次遍历到的子节点", item);
-        console.log("currentMatcher", res[i]);
+        // console.log("此次遍历到的子节点", item);
+        // console.log("currentMatcher", res[i]);
         return item.id === res[i];
       });
       // console.log("此次遍历完毕", currentposi);

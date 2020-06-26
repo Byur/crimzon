@@ -62,7 +62,7 @@ import { regularInput, overwriteRangeInput } from "../api/handleInputEvent";
 import enter from "../api/handleBreakLine";
 import backspace from "../api/handleBackSpace";
 import { getStack, saveStack } from "../api/stack";
-import { redirectRange, isActivated } from "../api/corefunctions";
+import { redirectRange, isAllActivated } from "../api/corefunctions";
 import { toolBar } from "./toolBar";
 let _ = require("lodash");
 export default {
@@ -85,12 +85,8 @@ export default {
       theSilentCartoGrapher: {
         // 字体颜色
         color: "#000000",
-        // 删除线(through-line),下划线(underline),上划线
-        "text-decoration": {
-          underline: "",
-          "through-line": "",
-          overline: ""
-        },
+        // 删除线(through-line),下划线(underline),上划线,暂时支持underline
+        "text-decoration": "none",
         // 突出标记
         "background-color": "",
         // 切换斜体italic||normal
@@ -102,7 +98,8 @@ export default {
         // 粗体
         "font-weight": ""
       },
-      // 色盘,暂时弃用
+      insertNewElementNode: false,
+      // 色盘,暂不支持
       colorBar: [],
 
       // 20200404,追加输入锁,在连续输入（使用输入法）转为直接输入一段时间之内,按键事件所触发的输入事件无效。
@@ -275,6 +272,12 @@ export default {
     //     }
     //   }
     // },
+    theSilentCartoGrapher: {
+      handler(val) {
+        console.log("有内鬼，终止交易", val);
+      },
+      deep: true
+    },
     trees: {
       handler(val) {
         this.innerText = val.toString();
@@ -287,8 +290,14 @@ export default {
     },
     range: {
       handler(val) {
-        console.log("watch range", val);
-        this.checkStyle();
+        if (val.watcherTrigger !== "OFF") {
+          console.log("watch range", val);
+          this.checkStyle();
+          return;
+        }
+        console.log(
+          "-------------------------本次不检测toolbar状态------------------------"
+        );
       },
       deep: true
     }
@@ -329,14 +338,16 @@ export default {
           elementList_Stage2 = refinedNodesByRange_stage2.spanParas(
             res.receive,
             this.trees,
-            this.range
+            this.range,
+            this.$store
           );
           break;
         case "spanSpans":
           elementList_Stage2 = refinedNodesByRange_stage2.spanSpans(
             res.receive,
             this.trees,
-            this.range
+            this.range,
+            this.$store
           );
           break;
         case "withinSingleSpan":
@@ -349,22 +360,39 @@ export default {
           break;
         case "scenePointMode":
           elementList_Stage2 = refinedNodesByRange_stage2.scenePointMode(
-            res.receive,
+            // res.receive,
             this.trees,
-            this.range
+            this.range,
+            this.$store
+            // this.theSilentCartoGrapher,
           );
           break;
         default:
           console.log("default", res.type);
           break;
       }
-      console.log("elementList_Stage2 from core", elementList_Stage2);
-      this.toolBar[index].changeStyle(elementList_Stage2);
+      // 涉及到页面重排
+      if (res.type !== "scenePointMode") {
+        console.log("elementList_Stage2 from core", elementList_Stage2);
+        this.toolBar[index].changeStyle(elementList_Stage2);
+        setTimeout(() => {
+          // rangeForTextChange(this.$store);
+          // window.sleep()
+          this.saveRange();
+          // this.range.watcherTrigger = "ON";
+        }, 0);
+        return;
+      }
+      // 改变当前theSilentCartoGrapher的配置,不涉及重排,在此之后的下一次输入，将使用新配置;
+      console.log("scenePointMode");
+      // this.theSilentCartoGrapher = elementList_Stage2[0].style;
+      this.toolBar[index].changeStyle(res.receive, this.theSilentCartoGrapher);
       setTimeout(() => {
-        rangeForTextChange(this.$store);
+        // rangeForTextChange(this.$store);
         // window.sleep()
-        this.saveRange();
-      }, 1);
+        this.range.watcherTrigger = "OFF";
+      }, 0);
+      return;
     },
     checkStyle() {
       // 不闭合，rangeMode,涉及文本改动
@@ -372,6 +400,11 @@ export default {
       if (!this.range.collapsed) {
         if (this.range.commonAncestorContainer.id === "origin") {
           // return paragraphs
+          console.log(
+            "test spanParas after watch",
+            this.range.startContainer,
+            this.range.endContainer
+          );
           receive = refinedNodesByRange_stage1.spanParas(
             this.trees,
             this.range
@@ -379,7 +412,7 @@ export default {
           console.log("spanParas", receive);
           toolBar.forEach(item => {
             console.log("item", item);
-            const boolean = isActivated(receive, item.cssAttr);
+            const boolean = isAllActivated(receive, item.cssAttr);
             console.log("inside vue instance", boolean);
             item.isActived(boolean);
           });
@@ -395,7 +428,7 @@ export default {
           console.log("spanSpans", receive);
           toolBar.forEach(item => {
             console.log("item", item);
-            const boolean = isActivated(receive, item.cssAttr);
+            const boolean = isAllActivated(receive, item.cssAttr);
             console.log("inside vue instance", boolean);
             item.isActived(boolean);
           });
@@ -408,7 +441,7 @@ export default {
           console.log("withinSingleSpan from core", receive);
           toolBar.forEach(item => {
             console.log("item", item);
-            const boolean = isActivated(receive, item.cssAttr);
+            const boolean = isAllActivated(receive, item.cssAttr);
             console.log("inside vue instance", boolean);
             item.isActived(boolean);
           });
@@ -422,12 +455,17 @@ export default {
           this.trees,
           this.range
         );
+        console.log("scenePointMode IN CHECK STYLE", receive);
+
         toolBar.forEach(item => {
           console.log("item", item);
-          const boolean = isActivated(receive, item.cssAttr);
+          const boolean = isAllActivated(receive, item.cssAttr);
           console.log("inside vue instance", boolean);
           item.isActived(boolean);
         });
+        // if (receive[0] && receive[0].style) {
+        //   this.theSilentCartoGrapher = receive[0].style;
+        // }
         // 添加当前
         return { receive, type: "scenePointMode" };
       }
@@ -467,7 +505,10 @@ export default {
     },
     start() {
       console.log("-----------------start---------------------", event);
-      this.saveRange();
+
+      if (this.range.watcherTrigger !== "OFF") {
+        this.saveRange();
+      }
       this.directInput = false;
     },
     // end: _.debounce(function(event) {
@@ -483,11 +524,17 @@ export default {
         event.preventDefault();
         regularInput.sceneComposiveMode(
           this.wordKeeper,
+          _.cloneDeep(this.theSilentCartoGrapher),
           this.range,
           this.trees,
           this.$store
         );
-        this.directInput = true;
+        setTimeout(() => {
+          this.saveRange();
+          this.directInput = true;
+          this.range.watcherTrigger = "ON";
+          console.log("刷新外部range", this.range);
+        }, 5);
         return;
       } else {
         event.stopImmediatePropagation();
@@ -510,6 +557,7 @@ export default {
           console.log("from core", currentRange);
           overwriteRangeInput.sceneComposiveMode.spanSpans(
             this.wordKeeper,
+            _.cloneDeep(this.theSilentCartoGrapher),
             this.range,
             this.trees,
             this.$store
@@ -576,7 +624,9 @@ export default {
       // const partBText = target.text.substr(this.range.endOffset,target.text.length); // 作用于同一文本节点时
       if (this.directInput) {
         // console.log("")
-        this.saveRange();
+        if (this.range.watcherTrigger !== "OFF") {
+          this.saveRange();
+        }
         // 判断场景
         // 焦点:段首,段末.文本节点中
         // 选区: 跨text,跨span,跨P
@@ -597,10 +647,16 @@ export default {
             // _.throttle(()=>{
             regularInput.sceneDirectMode(
               keyData,
+              _.cloneDeep(this.theSilentCartoGrapher),
               this.range,
               this.trees,
               this.$store
             );
+            setTimeout(() => {
+              this.saveRange();
+              this.range.watcherTrigger = "ON";
+              console.log("刷新外部range", this.range);
+            }, 50);
             return;
             // }, 20)();
           } else {
@@ -1050,19 +1106,24 @@ export default {
     rangeForTextChange,
     // 保存range要素至data和vuex
     saveRange() {
-      if (window.getSelection().getRangeAt(0)) {
-        this.range = window.getSelection().getRangeAt(0);
-        // console.log("saved", this.range);
-        this.store.commit("saveRangeBeforeTextChange", {
-          rangeFactor: {
-            startTextTankAncestor: window.getSelection().getRangeAt(0)
-              .startContainer.parentNode,
-            startOffset: window.getSelection().getRangeAt(0).startOffset,
-            endTextTankAncestor: window.getSelection().getRangeAt(0)
-              .endContainer.parentNode,
-            endOffset: window.getSelection().getRangeAt(0).endOffset
-          }
-        });
+      try {
+        if (window.getSelection().getRangeAt(0)) {
+          this.range = window.getSelection().getRangeAt(0);
+          // console.log("saved", this.range);
+          this.store.commit("saveRangeBeforeTextChange", {
+            rangeFactor: {
+              startTextTankAncestor: window.getSelection().getRangeAt(0)
+                .startContainer.parentNode,
+              startOffset: window.getSelection().getRangeAt(0).startOffset,
+              endTextTankAncestor: window.getSelection().getRangeAt(0)
+                .endContainer.parentNode,
+              endOffset: window.getSelection().getRangeAt(0).endOffset
+            }
+          });
+        }
+      } catch (error) {
+        // console.log('error', error)
+        return;
       }
     }
   }
