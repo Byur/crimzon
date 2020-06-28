@@ -18,6 +18,9 @@
         :key="item.name"
         @click="setStyle(index)"
       >
+        <div class="description">
+          <span>{{ item.description }}</span>
+        </div>
         <i :class="item.srcClass"></i>
       </div>
     </div>
@@ -62,7 +65,7 @@ import { regularInput, overwriteRangeInput } from "../api/handleInputEvent";
 import enter from "../api/handleBreakLine";
 import backspace from "../api/handleBackSpace";
 import { getStack, saveStack } from "../api/stack";
-import { redirectRange, isAllActivated } from "../api/corefunctions";
+import { redirectRange, isAllActivated_switch } from "../api/corefunctions";
 import { toolBar } from "./toolBar";
 let _ = require("lodash");
 export default {
@@ -329,7 +332,7 @@ export default {
       const buttonName = this.toolBar[index].buttonName;
       console.log(buttonName);
       // this.saveRange();
-      const res = this.checkStyle();
+      const res = this.checkStyle(index);
       console.log("ready to setStyle", _.cloneDeep(res.receive));
       let elementList_Stage2 = [];
       // 精修
@@ -394,7 +397,7 @@ export default {
       }, 0);
       return;
     },
-    checkStyle() {
+    checkStyle(index) {
       // 不闭合，rangeMode,涉及文本改动
       let receive = [];
       if (!this.range.collapsed) {
@@ -412,9 +415,11 @@ export default {
           console.log("spanParas", receive);
           toolBar.forEach(item => {
             console.log("item", item);
-            const boolean = isAllActivated(receive, item.cssAttr);
-            console.log("inside vue instance", boolean);
-            item.isActived(boolean);
+            if (item.type === "switch") {
+              const boolean = isAllActivated_switch(receive, item.cssAttr);
+              console.log("inside vue instance", boolean);
+              item.isActived(boolean);
+            }
           });
           return { receive, type: "spanParas" };
         } else if (
@@ -428,9 +433,11 @@ export default {
           console.log("spanSpans", receive);
           toolBar.forEach(item => {
             console.log("item", item);
-            const boolean = isAllActivated(receive, item.cssAttr);
-            console.log("inside vue instance", boolean);
-            item.isActived(boolean);
+            if (item.type === "switch") {
+              const boolean = isAllActivated_switch(receive, item.cssAttr);
+              console.log("inside vue instance", boolean);
+              item.isActived(boolean);
+            }
           });
           return { receive, type: "spanSpans" };
         } else if (this.range.startContainer === this.range.endContainer) {
@@ -441,9 +448,11 @@ export default {
           console.log("withinSingleSpan from core", receive);
           toolBar.forEach(item => {
             console.log("item", item);
-            const boolean = isAllActivated(receive, item.cssAttr);
-            console.log("inside vue instance", boolean);
-            item.isActived(boolean);
+            if (item.type === "switch") {
+              const boolean = isAllActivated_switch(receive, item.cssAttr);
+              console.log("inside vue instance", boolean);
+              item.isActived(boolean);
+            }
           });
           return { receive, type: "withinSingleSpan" };
           // return span which text in
@@ -457,11 +466,21 @@ export default {
         );
         console.log("scenePointMode IN CHECK STYLE", receive);
 
-        toolBar.forEach(item => {
+        toolBar.forEach((item, i) => {
           console.log("item", item);
-          const boolean = isAllActivated(receive, item.cssAttr);
-          console.log("inside vue instance", boolean);
-          item.isActived(boolean);
+          if (this.range.watcherTrigger === "OFF" && i === index) {
+            // item.isActived(!boolean);
+            // console.log（）
+            // do nothing
+          } else {
+            if (item.type === "switch") {
+              const boolean = isAllActivated_switch(receive, item.cssAttr);
+              console.log("inside vue instance", boolean);
+              item.isActived(boolean);
+              // if (){}
+              // console.log('aftercheckout',this.range)
+            }
+          }
         });
         // if (receive[0] && receive[0].style) {
         //   this.theSilentCartoGrapher = receive[0].style;
@@ -1140,12 +1159,34 @@ export default {
       width: 25px;
       height: 25px;
       background-color: rgba(255, 255, 255, 1);
+      position: relative;
       // justify-content: center;
       // align-items: center;
       // border: 1px solid #ccc;
     }
     .cell:hover {
       background-color: rgba(134, 134, 134, 0.3);
+      .description {
+        visibility: visible;
+        span {
+          background-color: beige;
+        }
+      }
+    }
+    .description {
+      position: absolute;
+      visibility: hidden;
+      height: 0px;
+      width: 0px;
+      background-color: rgba(134, 134, 134, 0.3);
+      top: -15px;
+      left: 0px;
+      span {
+        display: block;
+        width: 40px;
+        font-size: 8px;
+      }
+      // transition: all .1s;
     }
   }
   #theGhost {

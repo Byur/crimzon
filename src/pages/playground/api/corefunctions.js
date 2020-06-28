@@ -5,7 +5,7 @@
  * @param {String} cssAttr
  * @returns {Boolean}
  */
-export function isAllActivated(treedNodes_split, cssAttr) {
+export function isAllActivated_switch(treedNodes_split, cssAttr) {
   // console.log("treedNodes_split", treedNodes_split);
   const attrPair = cssAttr.split("_");
   const flaten = treedNodes_split.flat(1);

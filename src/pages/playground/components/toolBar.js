@@ -1,10 +1,16 @@
 import {
   bold,
   italic,
-  underline
+  underline,
+  color,
+  // fontsize_up,
+  // fontsize_down,
   // deleteLine
 } from "./buttons";
 export const toolBar = [
+  // fontsize_up,
+  // fontsize_down,
+  color,
   // {
   //   cssAttrName: "icon-weibiaoti1",
   //   srcClass: "iconfont icon icon-weibiaoti1",
