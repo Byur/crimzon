@@ -43,6 +43,12 @@
       @mouseup="checkRangeWhenNoCollapsed"
       @mouseleave="checkRangeWhenNoCollapsed"
     ></div>
+
+
+
+    <div id="formask">
+      
+    </div>
   </div>
 </template>
 <script>
@@ -67,6 +73,7 @@ import backspace from "../api/handleBackSpace";
 import { getStack, saveStack } from "../api/stack";
 import { redirectRange, isAllActivated_switch } from "../api/corefunctions";
 import { toolBar } from "./toolBar";
+import Mask from "../../../utils/simple_butREAL_component";
 let _ = require("lodash");
 export default {
   // @mouseleave="checkRange"
@@ -75,9 +82,15 @@ export default {
   async created() {
     this.store = this.$store;
     this.init();
+    console.log(
+      "document",
+      window.screen.availHeight,
+      window.screen.availWidth
+    );
   },
   mounted() {
     this.toolBar.push(...toolBar);
+    this.msakInit();
   },
   data() {
     return {
@@ -319,6 +332,15 @@ export default {
   //   }
   // },
   methods: {
+    //
+    msakInit() {
+      const mask = new Mask();
+      mask.init("formask");
+      console.log("mask创建完毕", mask);
+      return;
+    },
+
+    //
     checkRangeWhenNoCollapsed: _.debounce(function() {
       if (this.range && !this.range.collapsed) {
         this.saveRange();
