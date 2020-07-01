@@ -7,6 +7,10 @@
       </div>
       <div class="main">
         <el-row class="row">
+          <div id="formask"></div>
+          <el-button @click="inNout" style='z-index:"1000";position:fixed'
+            >?</el-button
+          >
           <el-col :span="14" class="formOperation">
             <form action="" ref="form">
               <div style="padding:10px 0px">
@@ -33,6 +37,9 @@
                 @select="acceptCM(1)"
                 @keydown="testDebounce"
               ></textarea>
+              <div class="content">
+                <input type="text" v-model="aab" />
+              </div>
             </form>
             <!-- 富文本编辑 -->
             <!-- <div class="editWords">
@@ -162,6 +169,7 @@
 <script>
 // import ArrayBox from "./components/ArrayBox";
 let _ = require("lodash");
+import Mask from "@/utils/simple_butREAL_component";
 export default {
   name: "AboutForms",
   components: {
@@ -171,8 +179,14 @@ export default {
   //     let inputGroup = [this.$refs.part1, this.$refs.part2, this.$refs.part3];
   //     console.log(inputGroup);
   // },
+  mounted() {
+    this.mask = this.msakInit();
+  },
   data() {
     return {
+      aab: "",
+      maskcollapsed: false,
+      mask: {},
       // 当前被选择标签
       currentIndex: 0,
       // 当前演示类型
@@ -245,6 +259,24 @@ export default {
     // }
   },
   methods: {
+    inNout() {
+      this.maskcollapsed = !this.maskcollapsed;
+      console.log("this.maskcollapsed", this.maskcollapsed);
+      console.log("this.mask", this.mask);
+      if (this.maskcollapsed) {
+        this.mask.collapse();
+      } else {
+        this.mask.spread();
+      }
+    },
+    //
+    msakInit() {
+      const mask = new Mask();
+      mask.init("formask");
+      // this.mask = mask;
+      console.log("mask创建完毕", mask);
+      return mask;
+    },
     testDebounce: _.debounce(function() {
       console.error("我着火了");
       this.testfunc();
