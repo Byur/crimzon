@@ -1,4 +1,11 @@
 /* eslint-disable no-unused-vars */
+// (function (global, factory) {
+//     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+//         typeof define === 'function' &&
+//             (global = global || self, global.Swiper = factory());
+// }(this, function () {
+
+// }));
 
 export default function() {
   const mask = {
