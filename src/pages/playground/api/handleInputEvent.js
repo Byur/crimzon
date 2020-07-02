@@ -262,7 +262,7 @@ export const regularInput = {
     console.log("sceneComposiveMode.range", range);
     console.log("watcherTrigger", range.watcherTrigger);
     if (range.startContainer.nodeType === 3) {
-      console.log("直球！");
+      // console.log("直球！");
       const currentOperateObj = range.commonAncestorContainer.parentNode;
       findTargetNode(currentOperateObj, trees).then(res => {
         let target = res;
