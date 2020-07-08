@@ -162,6 +162,9 @@
             </div>
           </el-col>
         </el-row>
+        <!-- <el-row> -->
+          <div id="ed"></div>
+        <!-- </el-row> -->
       </div>
     </div>
   </div>
@@ -169,7 +172,8 @@
 <script>
 // import ArrayBox from "./components/ArrayBox";
 let _ = require("lodash");
-import Mask from "@/utils/simple_butREAL_component";
+// import Mask from "@/utils/simple_butREAL_component";
+import Core from './baseclass/core/editor_core'
 export default {
   name: "AboutForms",
   components: {
@@ -180,7 +184,10 @@ export default {
   //     console.log(inputGroup);
   // },
   mounted() {
-    this.mask = this.msakInit();
+    // this.mask = this.msakInit();
+    const core = new Core();
+    console.log('core',core)
+    core.init('ed');
   },
   data() {
     return {
@@ -260,23 +267,17 @@ export default {
   },
   methods: {
     inNout() {
-      this.maskcollapsed = !this.maskcollapsed;
-      console.log("this.maskcollapsed", this.maskcollapsed);
-      console.log("this.mask", this.mask);
+      // console.log("this.maskcollapsed", this.maskcollapsed);
+      // console.log("this.mask", this.mask);
       if (this.maskcollapsed) {
         this.mask.collapse();
       } else {
         this.mask.spread();
       }
+      this.maskcollapsed = this.mask.collapsed;
     },
     //
-    msakInit() {
-      const mask = new Mask();
-      mask.init("formask");
-      // this.mask = mask;
-      console.log("mask创建完毕", mask);
-      return mask;
-    },
+
     testDebounce: _.debounce(function() {
       console.error("我着火了");
       this.testfunc();

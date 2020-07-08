@@ -114,32 +114,32 @@ export function redirectRange(store, forNewRange) {
 }
 // 每次遍历节点的路径
 let currentPath = [];
-async function getAncestorNode(htmlNode) {
+ function getAncestorNode(htmlNode) {
   if (htmlNode.parentNode) {
     let upgradeNode = htmlNode.parentNode;
     if (upgradeNode.id == "origin") {
       // console.log("应该停下来了", upgradeNode);
-      return await upgradeNode;
+      return  upgradeNode;
     } else {
       // 获取这个元素节点的的父元素ID加入
       currentPath.unshift(upgradeNode.id);
       // console.log("递归中", currentPath);
-      return await getAncestorNode(upgradeNode);
+      return  getAncestorNode(upgradeNode);
     }
   }
 }
-async function getGenerationTree(htmlNode) {
+ function getGenerationTree(htmlNode) {
   // console.log("入参：", htmlNode);
   currentPath = [];
   // 从数组头部加入冒泡顺序上的第一个元素节点id,这会导致最后一个也就是距离origin最近的子元素将会排在数组第一位
   currentPath.unshift(htmlNode.id);
-  await getAncestorNode(htmlNode);
+   getAncestorNode(htmlNode);
   // console.log("获取到路径", currentPath);
-  return await currentPath;
+  return  currentPath;
 }
 
-export async function findTargetNode(htmlNode, trees) {
-  let res = await getGenerationTree(htmlNode);
+export  function findTargetNode(htmlNode, trees) {
+  let res =  getGenerationTree(htmlNode);
   // console.log("回调开始", res);
   let currentposi = trees;
   // console.log("trees", trees);
@@ -165,5 +165,5 @@ export async function findTargetNode(htmlNode, trees) {
     }
   }
   // console.log("循环结束", currentposi);
-  return await currentposi;
+  return  currentposi;
 }

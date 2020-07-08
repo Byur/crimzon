@@ -80,10 +80,11 @@ export default {
       window.screen.availHeight,
       window.screen.availWidth
     );
+    console.log("ElementNode", ElementNode);
+    this.trees.getTagName();
   },
   mounted() {
     this.toolBar.push(...toolBar);
-    this.msakInit();
   },
   data() {
     return {
@@ -107,7 +108,6 @@ export default {
         // 粗体
         "font-weight": ""
       },
-      insertNewElementNode: false,
       // 色盘,暂不支持
       colorBar: [],
 
@@ -197,15 +197,12 @@ export default {
       ],
       // 当前判断是否打开了输入法,true为直接输入,false为输入法输入
       directInput: true,
-      // 上一次触发按键时的输入模式
-      lastStackInputMode: 0,
 
       // 临时存储输入法输入时键入的文字或词语
       wordKeeper: "",
       // rangeKeeper: {},
       range: {},
       currentRange: {},
-      worker: "",
       innerText: "",
       // 用于保存上一步的配置,通过后退触发,可前进,暂不开发
       // Ticks: [
@@ -889,126 +886,7 @@ export default {
         return;
       });
     },
-    /**
-     * @event
-     * keyup事件
-     * @ignore 以下是开发日志：
-     * 20200213:当前是监听退格键,预计改成监听按键事件,非特殊按键则认为是正常输入,用这个判断来识别退格、粘贴、剪切、删除和输入和类型
-     *
-     * 20200213,退格：退格操作简单分为三步：
-     * 第一步是删除文档中的响应的文本节点,这时候视觉效果来看用户选择的文本已经被删除了,但虚拟dom中还是原来的样子,这里我们可以获取当前文档中,也就是表面删除后的range对象和文本节点；
-     * 第二步是同步html文档和虚拟dom中相关实例的文本,这里需要通过第一步获取的文本节点的parentNode,也就是他所属的元素节点,通过接着元素节点找到虚拟dom中相应的实例、然后将文本节点的值赋值给这个实例的text属性；
-     * 第三步是给第二步擦屁股,因为依赖更新之后,会引起浏览器的重绘,这个时候会出现焦点出现在文档流里编辑器区域的头部,所以我们需要使焦点出现在我们修改/删除后的文本的末尾,这一步操作需要将现有的range对象修改/替换为第一步提到的range对象。
-     *
-     * 20200213,正常输入
-     * 输入和删除都会触发oninput事件,但这两者的不同之处在于输入场景的时候文本长度会变长,而删除的时候文本长度会变短,所以我想如果输入时要保持range对象,目标文本的前后文本长度是需要记录的,这里先假设keydown和keyup两个时刻文本长度会有变化,那恢复range的时候正确的startOffset和endOffset应该为：输入前的startOffset+（输入后的文本长度-输入前的文本长度）,这个公式一样可以应用于选中多文本的替换输入（或者粘贴）的场景。（经实测键盘事件不能获取到最深的文本节点所属的元素节点,因此将改为使用range的startContainer获取,为了简洁,可能要考虑将存ID改为保存节点本身）
-     * 20200218 已经将英文的正常输入做好,现在由于部分不能输出字符的按键被触发的时候,会因为文本节点长度找不到range+1的位置,这点将在后续对功能键做屏蔽处理
-     * 20200218 关于上面这点问题与中英文输入的结合,目前打算是输入法输入的时候将,在keydown事件里将空格键做一个意外处理屏蔽掉,然后
-     *
-     * ,判断keyCode等于8时触发,目前通过触发keyup事件触发,要使range位置返回原位,需要临时保存删除之后文档中所在的元素节点的ID,,暂时不需要额外参数
-     */
-    // 监听删除操作,返回虚拟dom
-    // 0320,使用debounce,应对连续输入状况150毫秒延迟后触发一次,若间隔小于150,将重置计时
-    delectionLimit: _.debounce(async function(event) {
-      // console.time("-----timer-----\n");
-      // 删除的场景：1：退格键,range跨节点/多文本删除 2：删除键
 
-      /**
-       * @readonly
-       * 文本更新之后导致的视图刷新之后range位置重置,将当前焦点的range对象部分参数存入状态管理,然后在删除文本之后取出,新建一个range对象插回
-       */
-      // console.log("事件对象", event, this.directInput);
-      // this.range = window.getSelection().getRangeAt(0);
-      // this.store.commit('actionUndo')("saveRangeBeforeTextChange", {
-      //   rangeFactor: {
-      //     startTextTankAncestor: window.getSelection().getRangeAt(0)
-      //       .startContainer.parentNode,
-      //     startOffset: window.getSelection().getRangeAt(0).startOffset,
-      //     endTextTankAncestor: window.getSelection().getRangeAt(0).endContainer
-      //       .parentNode,
-      //     endOffset: window.getSelection().getRangeAt(0).endOffset
-      //   }
-      // });
-      // console.log(this.store.prevRange);
-      // console.log()一个复杂类型（具有get、set属性）的值的时候,在chrome里console.log展开看到的是这个变量当前的值而不是代码执行时的快照,如果需要这个变量全部的属性,需要进行深拷贝,而JSON.stringify这种级别的深拷贝对不可枚举的部分和对象的方法本身不能实现序列化,需要比较麻烦的额外处理,所以如果只使用少量属性的话,建议单独取出如下,这里取出的startOffset是快照的数值而不是当前的数值
-      // let startContainer = this.range.startContainer;
-      // // this.rangeKeeper = startContainer;
-      // let startOffset = this.range.startOffset;
-      // console.log(
-      //   startContainer,
-      //   startOffset,
-      //   this.range.commonAncestorContainer.parentNode
-      //   // JSON.parse(JSON.stringify(window.getSelection().getRangeAt(0)))
-      //   // JSON.stringify(window.getSelection().getRangeAt(0))
-      // );
-      // 直接输出模式,这时候的退格键会将文本删除
-
-      if (this.funcKeyCodes.indexOf(event.keyCode) !== -1) {
-        console.log(
-          "-----------------------keyup被屏蔽的键码是----------------",
-          event.keyCode
-        );
-        event.preventDefault();
-        return false;
-      }
-      if (this.directInput) {
-        if (event.keyCode === 8) {
-          event.preventDefault();
-          return;
-        } else {
-          // this.saveRange();
-          console.log("keyup时刻的range", this.store.state.prevRangeFactor);
-          // regularInput.sceneDirectMode(this.range, this.trees, this.$store);
-          // let currentOperateObj = this.range.commonAncestorContainer.parentNode;
-          // // 0419有一个问题在于,当一个P级元素删除晚全部文本后,确实是会留下一个br站位保持换行,但是在此基础上新添加的文本是不在span标签中的,因而会对后续的trees造成影响,因此在这里追加一个判断,当currentOperateObj不为span时,创造一个span添加到P里
-          // // 获取相应的虚拟dom的引用
-          // this.findTargetNode(currentOperateObj,this.trees).then(async res => {
-          //   // 若res不是个用于装载文本的节点,他将会是个P级节点,由上一个注释可知,在P级节点中编辑文本,重排时依然会保留用于占位的br节点,因此在下面做了一个判断,当p级节点但只有一个子节点并且这个节点为br时,将删除这个节点并且新增一个span节点手动插入
-          //   console.log("-----------按键松开后的range所在的父级元素节点", res);
-          //   if (res.tag !== "span") {
-          //     if (res.children.length === 1 && res.children[0].tag === "br") {
-          //       res.children.pop();
-          //     }
-          //     const span = await new ElementNode(
-          //       "span",
-          //       this.range.commonAncestorContainer.nodeValue
-          //     );
-          //     // 0424 追加父节点属性parent
-          //     span.parent = res;
-          //     res.children.push(span);
-          //     setTimeout(() => {
-          //       this.rangeForTextChange();
-          //       // console.timeEnd("-----timer-----\n");
-          //     }, 5);
-          //     return;
-          //   }
-          //   let target = res;
-          //   // console.log("正在受影响的实例", target);
-          //   let currentNodeValue = this.range.commonAncestorContainer.nodeValue;
-          //   // console.error("--------修改值---------", currentNodeValue);
-          //   target.text = currentNodeValue;
-          //   // this.rangeForTextChange();
-          //   setTimeout(() => {
-          //     this.rangeForTextChange();
-          //     // console.timeEnd("-----timer-----\n");
-          //   }, 3);
-          //   return;
-          // });
-          return;
-        }
-      } else {
-        // keydown compositionstart input keyup compositionend
-        console.log("当前为连续输入模式", event.keyCode);
-        // event.stopImmediatePropagation();
-        // event.preventDefault();
-        // 非直接输出模式,这时候退格键、回车键、加减、数字键将操作输入法,而不会影响已经同步了的文本,要做额外处理
-        // 这里离应该做一个功能键的列表,当他们按下的时候,不做任何操作,return false就完事
-      }
-    }, 0),
-
-    /**
-     * @feature
-     */
     // 初始化
     init() {
       // shell
@@ -1023,61 +901,55 @@ export default {
       this.trees = origin;
       origin.id = "origin";
 
-      setTimeout(() => {
-        const newPara = new ElementNode("p", "", {}, {}, []);
-        newPara.parent = this.trees;
-        this.trees.children.push(newPara);
-        setTimeout(() => {
-          const newinlineEle = new ElementNode("span", "abdl", {}, {}, []);
-          newinlineEle.parent = newPara;
-          const ano1 = new ElementNode(
-            "span",
-            "acdc",
-            { color: "red", "font-weight": "bold" },
-            {},
-            []
-          );
-          const ano2 = new ElementNode(
-            "span",
-            "lenox",
-            { color: "green", "font-weight": "bold" },
-            {},
-            []
-          );
-          const ano3 = new ElementNode(
-            "span",
-            "bowy",
-            { color: "pink", "font-weight": "bold" },
-            {},
-            []
-          );
-          ano1.id += 1;
-          ano1.parent = newPara;
-          ano2.id += 2;
-          ano2.parent = newPara;
-          ano3.id += 3;
-          ano3.parent = newPara;
-          newPara.children.push(newinlineEle);
-          newPara.children.push(ano1);
-          newPara.children.push(ano2);
-          newPara.children.push(ano3);
+      // setTimeout(() => {
+      const newPara = new ElementNode("p", "", {}, {}, []);
+      newPara.parent = this.trees;
+      this.trees.children.push(newPara);
+      // setTimeout(() => {
+      const newinlineEle = new ElementNode("span", "abdl", {}, {}, []);
+      newinlineEle.parent = newPara;
+      const ano1 = new ElementNode(
+        "span",
+        "acdc",
+        { color: "red", "font-weight": "bold" },
+        {},
+        []
+      );
+      const ano2 = new ElementNode(
+        "span",
+        "lenox",
+        { color: "green", "font-weight": "bold" },
+        {},
+        []
+      );
+      const ano3 = new ElementNode(
+        "span",
+        "bowy",
+        { color: "pink", "font-weight": "bold" },
+        {},
+        []
+      );
+      ano1.id += 1;
+      ano1.parent = newPara;
+      ano2.id += 2;
+      ano2.parent = newPara;
+      ano3.id += 3;
+      ano3.parent = newPara;
+      newPara.children.push(newinlineEle);
+      newPara.children.push(ano1);
+      newPara.children.push(ano2);
+      newPara.children.push(ano3);
 
-          this.saveStack(this.trees, this.$store, {
-            startId: ano3.id,
-            startOffset: ano3.text.length,
-            endId: ano3.id,
-            endOffset: ano3.text.length
-          });
-        }, 0);
-      }, 0);
-    },
-    // 创建元素
-    createVirtualNode(tag, text, style, attr, children) {
-      return new Promise(res => {
-        const ele = new ElementNode(tag, text, style, attr, children);
-        return res(ele);
+      this.saveStack(this.trees, this.$store, {
+        startId: ano3.id,
+        startOffset: ano3.text.length,
+        endId: ano3.id,
+        endOffset: ano3.text.length
       });
+      // }, 0);
+      // }, 0);
     },
+
     // normal入栈
     saveStack,
     // action:redo/undo为参数,从相应的栈中获取栈顶,将相应时刻的trees和range返回
@@ -1111,15 +983,6 @@ export default {
     //     return this.getDeepestNodeId(node.children[node.children.length - 1]);
     //   }
     // },
-
-    /**
-     * @featrue
-     * type=>Object
-     */
-    creatElementNode(config) {
-      // 插入某个节点之后,为保持节点ID的易识别性和唯一性,id使用时间戳
-      console.log("当前的创建配置为:", config);
-    },
 
     // 获取与入参元素节点对应的虚拟dom的引用
     findTargetNode,

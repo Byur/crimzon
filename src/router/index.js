@@ -4,6 +4,7 @@ import Home from "../pages/Home";
 import Playground from "../pages/playground/Playground";
 import AboutForms from "../pages/playground/AboutForms";
 import richEditor from "../pages/playground/richEditor";
+import blank from "../pages/playground/blank";
 
 Vue.use(VueRouter);
 
@@ -29,6 +30,11 @@ const routes = [
     path: "/richEditor",
     name: "richEditor",
     component: richEditor
+  },
+  {
+    path: "/blank",
+    name: "blank",
+    component: blank
   }
 ];
 

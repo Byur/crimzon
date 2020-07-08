@@ -10,6 +10,7 @@
   </div>
 </template>
 <script>
+// import Editor from "./baseclass/core/Editor";
 export default {
   name: "Playground",
   data() {
@@ -32,10 +33,12 @@ export default {
       this.$router.push("/playground/aboutForms");
     },
     richEditor() {
-      console.log(this.v4);
-      this.v4 = { a: "3" };
-      console.log("第二次", this.v4);
-      // this.$router.push("/richEditor");
+      // console.log(this.v4);
+      // this.v4 = { a: "3" };
+      // console.log("第二次", this.v4);
+      this.$router.push("/richEditor");
+      // const crim = new Editor();
+      // console.log("crim", crim);
     }
   }
 };
