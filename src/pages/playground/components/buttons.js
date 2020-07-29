@@ -105,6 +105,7 @@ export const italic = {
   cssAttr: "font-style_italic",
   srcClass: "iconfont icon icon-xietiweixuanzhong",
   description: "字体斜体",
+  // 外部的isActivated方法,if true,证明选取范围内全是bold
   isActived: function(boolean) {
     if (boolean) {
       this.srcClass = "iconfont icon icon-xietixuanzhong";
@@ -112,7 +113,6 @@ export const italic = {
       this.srcClass = "iconfont icon icon-xietiweixuanzhong";
     }
   },
-  // 外部的isActivated方法,if true,证明选取范围内全是bold
   changeStyle: function(elementList, theSilentCartoGrapher) {
     console.log("got command", elementList, theSilentCartoGrapher);
     if (this.srcClass === "iconfont icon icon-xietiweixuanzhong") {

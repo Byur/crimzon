@@ -10,10 +10,10 @@ export default (function() {
     // children-Array
     constructor(tag, text, style, attr, children) {
       // let now = new Date();
-      console.log('new elenemtNode')
+      // console.log('new elenemtNode')
       const id_Date = new Date().getTime();
       const id_ramdom = Math.floor(Math.random() * 1000);
-      console.log("id_Date", id_Date, "id_ramdom", id_ramdom);
+      // console.log("id_Date", id_Date, "id_ramdom", id_ramdom);
       this.tag = tag || "";
       this._text = text || "";
       this.style = style || {};

@@ -4,16 +4,18 @@
   </div>
 </template>
 <script>
-import Core from '../playground/baseclass/core/editor_core'
+import Editor from "../playground/baseclass/core/Editor";
 export default {
   data() {
     return {
-      ed:{}
+      ed: {}
     };
   },
   mounted() {
-    const ed = new Core(this.$store)
-    ed.init('ed')
+    const ed = new Editor("ed", this.$store);
+    // ed.init()
+    console.log("editor outside of window", ed);
+
   }
 };
 </script>

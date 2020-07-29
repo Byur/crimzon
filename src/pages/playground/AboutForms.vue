@@ -84,7 +84,6 @@
                 </div>
                 <div class="content">
                   <textarea
-                    v-model="copybynoPermit"
                     name=""
                     id=""
                     cols="45"
@@ -163,17 +162,19 @@
           </el-col>
         </el-row>
         <!-- <el-row> -->
-          <div id="ed"></div>
+        <div id="ed"></div>
         <!-- </el-row> -->
       </div>
     </div>
   </div>
 </template>
 <script>
+/* eslint-disable no-unused-vars */
+
 // import ArrayBox from "./components/ArrayBox";
 let _ = require("lodash");
 // import Mask from "@/utils/simple_butREAL_component";
-import Core from './baseclass/core/editor_core'
+import Core from "./baseclass/core/editor_core";
 export default {
   name: "AboutForms",
   components: {
@@ -186,8 +187,49 @@ export default {
   mounted() {
     // this.mask = this.msakInit();
     const core = new Core();
-    console.log('core',core)
-    core.init('ed');
+    console.log("core", core);
+    core.init("ed");
+    class Promise {
+      constructor(exec) {
+        this.status = "pending";
+        this.value = null;
+        this.err = null;
+        const res = res => {
+          if (this.status === "pending") {
+            console.log("res", res);
+            this.value = res;
+            this.status = "fullfilled";
+          }
+        };
+        const rej = err => {
+          if (this.status === "pending") {
+            this.status = "rejected";
+            this.err = err;
+          }
+        };
+        this.PromiseStatus = "pending";
+
+        exec(res, rej);
+      }
+      then(onResolve) {
+        setTimeout(() => {
+          console.log("");
+          onResolve(this.value);
+        }, 0);
+        // return new Promise()
+      }
+    }
+    const test = new Promise(function(res) {
+      console.log("同步部分");
+      res("s");
+    });
+    test.then(res => {
+      console.log(res);
+    });
+    console.log("fakePromise", test);
+    // test.then(res=>{
+    //   console.log(res)
+    // });
   },
   data() {
     return {
@@ -266,6 +308,25 @@ export default {
     // }
   },
   methods: {
+    blockCompositionInputStart() {
+      console.log("start");
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    },
+    blockCompositionInputUpdate() {
+      console.log("update");
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    },
+    blockCompositionInputEnd() {
+      console.log("end");
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    },
+
     inNout() {
       // console.log("this.maskcollapsed", this.maskcollapsed);
       // console.log("this.mask", this.mask);

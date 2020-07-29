@@ -738,6 +738,7 @@ export const refinedNodesByRange_stage2 = {
   },
   withinSingleSpan: function(elementList_Stage1, trees, range, store) {
     const target = elementList_Stage1[0];
+    console.log("elementList_Stage1 in stage2", target.text);
     const targetPara = target.parent;
     const startIndex = targetPara.children.findIndex(
       item => item.id === target.id

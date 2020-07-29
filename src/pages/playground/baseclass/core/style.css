@@ -1,0 +1,37 @@
+#toolbar {
+    display: flex;
+    width: 100%;
+}
+#toolbar .cell {
+    box-sizing: border-box;
+    width: 25px;
+    height: 25px;
+    background-color: rgba(255, 255, 255, 1);
+    position: relative;
+    /* // justify-content: center;
+    // align-items: center;
+    // border: 1px solid #ccc; */
+}
+#toolbar .cell:hover {
+  background-color: rgba(134, 134, 134, 0.3);
+}
+#toolbar .cell:hover .description {
+  visibility: visible;
+}
+#toolbar .cell:hover .description span {
+  background-color: beige
+}
+#toolbar .description {
+  position: absolute;
+  visibility: hidden;
+  height: 0px;
+  width: 0px;
+  background-color: rgba(134, 134, 134, 0.3);
+  top: -15px;
+  left: 0px;
+}
+#toolbar .description span {
+  display: block;
+  width: 40px;
+  font-size: 8px;
+}

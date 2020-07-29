@@ -3,6 +3,7 @@
 import Base from "./baseclass_base";
 import _ from "lodash";
 import ElementNode from "../baseclass/tags";
+import { add, read, update } from "./database";
 import {
   // saveRange,
   rangeForTextChange,
@@ -24,8 +25,9 @@ import backspace from "../../api/handleBackSpace";
 import { redirectRange, isAllActivated_switch } from "../../api/corefunctions";
 import { toolBar } from "../../components/toolBar";
 import { saveStack } from "../../api/stack";
+import { underline } from "../../components/buttons";
 
-const handlerInput = async function handlerInput(event) {
+const handlerInput = function handlerInput(event) {
   console.log("handlerInput", this);
   console.log(
     "___________________________________throttle",
@@ -39,9 +41,9 @@ const handlerInput = async function handlerInput(event) {
       this.saveRange();
     }
 
-    console.log("saveRange from core：keydown", this.range);
     const currentRange = this.range;
     const pointMode = currentRange.collapsed;
+    console.log("saveRange from core：keydown", this.range);
     // 判定为焦点模式
     if (pointMode) {
       if (this.funcKeyCodes.indexOf(event.keyCode) === -1) {
@@ -63,8 +65,8 @@ const handlerInput = async function handlerInput(event) {
         setTimeout(() => {
           this.saveRange();
           this.range.watcherTrigger = "ON";
-          console.log("刷新外部range", this.trees);
-        }, 50);
+          // console.log("刷新外部range", this.trees);
+        }, 5);
         return;
         // }, 20)();
       } else {
@@ -74,13 +76,33 @@ const handlerInput = async function handlerInput(event) {
           if (event.keyCode === 8) {
             event.stopImmediatePropagation();
             event.preventDefault();
-            backspace.scenePointMode(currentRange, this.trees, this.$store);
+            const fornewrange = backspace.scenePointMode(
+              currentRange,
+              this.trees,
+              this.$store
+            );
+            this.render();
+            redirectRange(this.$store, fornewrange);
+            // saveStack(this.trees, this.$store, fornewrange);
+            setTimeout(() => {
+              this.saveRange();
+              // this.range.watcherTrigger = "ON";
+              // console.log("刷新外部range", this.trees);
+            }, 5);
             // // 暂不处理
             return;
           } else if (event.keyCode === 13) {
             event.stopImmediatePropagation();
             event.preventDefault();
-            enter.scenePointMode(currentRange, this.trees, this.$store);
+            const fornewrange = enter.scenePointMode(currentRange, this.trees);
+            this.render();
+            redirectRange(this.$store, fornewrange);
+            saveStack(this.trees, this.$store, fornewrange);
+            setTimeout(() => {
+              this.saveRange();
+              // this.range.watcherTrigger = "ON";
+              // console.log("刷新外部range", this.trees);
+            }, 5);
             return;
           }
         } else {
@@ -88,14 +110,39 @@ const handlerInput = async function handlerInput(event) {
           if (event.keyCode === 8) {
             event.stopImmediatePropagation();
             event.preventDefault();
-            backspace.sceneOutOfException1(
+            const fornewrange = backspace.sceneOutOfException1(
               currentRange,
               this.trees,
               this.$store
             );
+            if (fornewrange) {
+              this.render();
+              redirectRange(this.$store, fornewrange);
+              saveStack(this.trees, this.$store, fornewrange);
+              setTimeout(() => {
+                this.saveRange();
+                // this.range.watcherTrigger = "ON";
+                // console.log("刷新外部range", this.trees);
+              }, 5);
+            }
+
             return;
           } else if (event.keyCode === 13) {
-            enter.sceneOutOfException1(currentRange, this.trees, this.$store);
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            const fornewrange = enter.sceneOutOfException1(
+              currentRange,
+              this.trees
+              // this.$store
+            );
+            this.render();
+            redirectRange(this.$store, fornewrange);
+            saveStack(this.trees, this.$store, fornewrange);
+            setTimeout(() => {
+              this.saveRange();
+              // this.range.watcherTrigger = "ON";
+              // console.log("刷新外部range", this.trees);
+            }, 5);
             return;
           }
         }
@@ -130,16 +177,25 @@ const handlerInput = async function handlerInput(event) {
         } else if (event.keyCode === 8) {
           event.stopImmediatePropagation();
           event.preventDefault();
-          backspace.sceneRangeMode.spanParas(
+          const fornewrange = backspace.sceneRangeMode.spanParas(
             currentRange,
             this.trees,
             this.$store
           );
+          this.render();
+          redirectRange(this.$store, fornewrange);
+          saveStack(this.trees, this.$store, fornewrange);
           return;
         } else if (event.keyCode === 13) {
           event.stopImmediatePropagation();
           event.preventDefault();
-          enter.sceneRangeMode.spanParas(currentRange, this.trees, this.$store);
+          const fornewrange = enter.sceneRangeMode.spanParas(
+            currentRange,
+            this.trees
+          );
+          this.render();
+          redirectRange(this.$store, fornewrange);
+          saveStack(this.trees, this.$store, fornewrange);
           return;
         }
       }
@@ -169,18 +225,27 @@ const handlerInput = async function handlerInput(event) {
         } else if (event.keyCode === 8) {
           event.stopImmediatePropagation();
           event.preventDefault();
-          backspace.sceneRangeMode.spanSpans(
+          const fornewrange = backspace.sceneRangeMode.spanSpans(
             currentRange,
             this.trees,
             this.$store
           );
+          this.render();
+          redirectRange(this.$store, fornewrange);
+          saveStack(this.trees, this.$store, fornewrange);
           return;
         } else if (event.keyCode === 13) {
           event.stopImmediatePropagation();
           event.preventDefault();
           console.log("跨span选取");
           // 修改partA实例
-          enter.sceneRangeMode.spanSpans(currentRange, this.trees, this.$store);
+          const fornewrange = enter.sceneRangeMode.spanSpans(
+            currentRange,
+            this.trees
+          );
+          this.render();
+          redirectRange(this.$store, fornewrange);
+          saveStack(this.trees, this.$store, fornewrange);
           return;
         }
       }
@@ -207,82 +272,132 @@ const handlerInput = async function handlerInput(event) {
         } else if (event.keyCode === 8) {
           event.stopImmediatePropagation();
           event.preventDefault();
-          backspace.sceneRangeMode.withinSingleSpan(
+          const fornewrange = backspace.sceneRangeMode.withinSingleSpan(
             currentRange,
             this.trees,
             this.$store
           );
+          this.render();
+          redirectRange(this.$store, fornewrange);
+          saveStack(this.trees, this.$store, fornewrange);
           return;
         } else if (event.keyCode === 13) {
           event.stopImmediatePropagation();
           event.preventDefault();
-          enter.sceneRangeMode.withinSingleSpan(
+          const fornewrange = enter.sceneRangeMode.withinSingleSpan(
             currentRange,
-            this.trees,
-            this.$store
+            this.trees
           );
+          this.render();
+          redirectRange(this.$store, fornewrange);
+          saveStack(this.trees, this.$store, fornewrange);
           return;
         }
       }
       return;
     }
-  } 
-  // else {
-  //   console.log("this.directInput = false", event.keyCode);
-  //   event.preventDefault();
-  //   event.stopImmediatePropagation();
-  //   this.saveRange()
-  //   return;
-  // }
+  } else {
+    console.log("this.directInput = false", event.keyCode);
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    // this.saveRange()
+    return;
+  }
 };
 const donothing = function donothing(event) {
   event.preventDefault();
-  // console.log("被阻止了");
+  console.log("keyup 或者 keypress被阻止了", this.directInput);
   return;
 };
 const start = function start(event) {
-  event.preventDefault();
+  // event.preventDefault();
+  // event.stopPropagation();
   console.log("-----------------start---------------------", event);
 
   if (this.range.watcherTrigger !== "OFF") {
-    console.log("before composition begins")
+    console.log("before composition begins");
     this.saveRange();
   }
   console.log("range in composition start", this.range);
   this.directInput = false;
+  if (!this.compositionInputRangeFactor.startId) {
+    this.compositionInputRangeFactor = _.cloneDeep({
+      startId: this.range.startContainer.parentNode.id,
+      endId: this.range.endContainer.parentNode.id,
+      startOffset: this.range.startOffset,
+      endOffset: this.range.endOffset
+    });
+  }
+  // console.log('缓存该场景下专用的range',this.compositionInputRange,Object.keys(this.compositionInputRange))
+  // 缓存该场景下专用的range
 };
 
 const end = function end(event) {
   console.log("-----------------end---------------------", event);
   // this.saveRange();
   event.preventDefault();
+  event.stopPropagation();
   this.wordKeeper = event.data;
   console.log(
-    "saveRange from core：keydown",
-    this.range.startOffset,
-    this.range.startOffset,
+    "trigger from end\n",
     this.range.collapsed,
-    window.getSelection().getRangeAt(0)
+    "\n",
+    this.compositionInputRangeFactor
   );
-  const currentRange = this.range;
-  const pointMode = currentRange.collapsed;
 
+  let currentRange = this.range;
+  if (this.compositionInputRangeFactor.startId !== undefined) {
+    console.log("新建range", this.compositionInputRangeFactor);
+    const startContainer = document.getElementById(
+      this.compositionInputRangeFactor.startId
+    );
+    const endContainer = document.getElementById(
+      this.compositionInputRangeFactor.endId
+    );
+
+    const newRange = document.createRange();
+    console.log(
+      "新建range",
+      startContainer.childNodes[0],
+      this.compositionInputRangeFactor.startOffset
+    );
+    newRange.setStart(
+      startContainer.childNodes[0],
+      this.compositionInputRangeFactor.startOffset
+    );
+    newRange.setEnd(
+      endContainer.childNodes[0],
+      this.compositionInputRangeFactor.endOffset
+    );
+    currentRange = newRange;
+    console.log("新建的range：", currentRange);
+  }
+  console.log(Object.keys(currentRange), Object.keys(this.range));
+  const pointMode = currentRange.collapsed;
+  // event.preventDefault()
+  // console.log('结束')
+  // return;
   if (pointMode) {
     console.log("pointMode", pointMode, this.range);
     event.stopImmediatePropagation();
     event.preventDefault();
+    console.log("before enter inputAPI：", this.range);
     const fornewrange = regularInput.sceneComposiveMode(
       this.wordKeeper,
       _.cloneDeep(this.theSilentCartoGrapher),
-      this.range,
+      currentRange,
       this.trees,
       this.$store
     );
-    this.directInput = true;
     this.render();
     redirectRange(this.$store, fornewrange);
-    this.range.watcherTrigger = "ON";
     saveStack(this.trees, this.$store, fornewrange);
+    this.compositionInputRangeFactor = {};
+    this.saveRange();
+    this.directInput = true;
+    currentRange.watcherTrigger = "ON";
+    console.log("刷新directInput", this.directInput);
+    // this.saveRange();
     // setTimeout(() => {
     //   this.saveRange();
     //   this.directInput = true;
@@ -293,11 +408,11 @@ const end = function end(event) {
   } else {
     event.stopImmediatePropagation();
     event.preventDefault();
-    console.log("非常规--连续输入");
+    console.log("非常规--连续输入", currentRange);
     if (currentRange.commonAncestorContainer.id === "origin") {
       const fornewrange = overwriteRangeInput.sceneDirectMode.spanParas(
         this.wordKeeper,
-        this.range,
+        currentRange,
         this.trees,
         this.$store
       );
@@ -315,7 +430,7 @@ const end = function end(event) {
       const fornewrange = overwriteRangeInput.sceneComposiveMode.spanSpans(
         this.wordKeeper,
         _.cloneDeep(this.theSilentCartoGrapher),
-        this.range,
+        currentRange,
         this.trees,
         this.$store
       );
@@ -327,7 +442,7 @@ const end = function end(event) {
     } else if (currentRange.startContainer === currentRange.endContainer) {
       const fornewrange = overwriteRangeInput.sceneDirectMode.withinSingleSpan(
         this.wordKeeper,
-        this.range,
+        currentRange,
         this.trees,
         this.$store
       );
@@ -343,17 +458,94 @@ const end = function end(event) {
     }
   }
 };
+// 自定义事件，将range发送到外部组件
 
-const checkRange = _.debounce(function() {
-  console.log("this.saveRange()", this);
+const checkRange = _.debounce(async function() {
   this.saveRange();
-}, 50);
-const checkRangeWhenNoCollapsed = _.debounce(function() {
-  if (this.range && !this.range.collapsed) {
-    console.log("当前range不合并");
-    this.saveRange();
+  // console.log("this.saveRange()", this.range);
+  // 触发rangeModified事件，使用事件委托在外层监听，最后将会被外层的结构捕捉到
+  console.log("this.rangeModifiedEvent", this.rangeModifiedEvent);
+  const resRead = await read("sendToToolbar", 1);
+  console.log("阻塞成功");
+  // 存在数据，使用put方法更新
+  if (resRead) {
+    const resPut = await update("sendToToolbar", 1, {
+      rangeFactor: {
+        startId:
+          this.range.startContainer.id ||
+          this.range.startContainer.parentNode.id,
+        endId:
+          this.range.endContainer.id || this.range.endContainer.parentNode.id,
+        startOffset: this.range.startOffset,
+        endOffset: this.range.endOffset
+      },
+      trees: this.trees
+    });
+    if (resPut) {
+      this.dom7.dispatchEvent(this.rangeModifiedEvent);
+    }
+    return;
+  }
+  // 不存在数据，使用add方法新增
+  const resAdd = await add("sendToToolbar", {
+    rangeFactor: {
+      startId:
+        this.range.startContainer.id || this.range.startContainer.parentNode.id,
+      endId:
+        this.range.endContainer.id || this.range.endContainer.parentNode.id,
+      startOffset: this.range.startOffset,
+      endOffset: this.range.endOffset
+    },
+    trees: this.trees
+  });
+  if (resAdd) {
+    this.dom7.dispatchEvent(this.rangeModifiedEvent);
   }
   return;
+  // 当前先用session临时存放trees和range
+}, 50);
+const checkRangeWhenNoCollapsed = _.debounce(async function() {
+  if (this.range && !this.range.collapsed) {
+    this.saveRange();
+    const resRead = await read("sendToToolbar", 1);
+    console.log("阻塞成功");
+    // 存在数据，使用put方法更新
+    if (resRead) {
+      const resPut = await update("sendToToolbar", 1, {
+        rangeFactor: {
+          startId:
+            this.range.startContainer.id ||
+            this.range.startContainer.parentNode.id,
+          endId:
+            this.range.endContainer.id || this.range.endContainer.parentNode.id,
+          startOffset: this.range.startOffset,
+          endOffset: this.range.endOffset
+        },
+        trees: this.trees
+      });
+      if (resPut) {
+        this.dom7.dispatchEvent(this.rangeModifiedEvent);
+      }
+      return;
+    }
+    // 不存在数据，使用add方法新增
+    const resAdd = await add("sendToToolbar", {
+      rangeFactor: {
+        startId:
+          this.range.startContainer.id ||
+          this.range.startContainer.parentNode.id,
+        endId:
+          this.range.endContainer.id || this.range.endContainer.parentNode.id,
+        startOffset: this.range.startOffset,
+        endOffset: this.range.endOffset
+      },
+      trees: this.trees
+    });
+    if (resAdd) {
+      this.dom7.dispatchEvent(this.rangeModifiedEvent);
+    }
+    return;
+  }
 }, 50);
 
 const methods = {
@@ -372,12 +564,14 @@ export default (function() {
       this.dom7 = {};
       this.$store = store;
       this.range = {};
+      this.compositionInputRangeFactor = {};
       this.style = {
         width: "100%",
         minHeight: "500px",
         textAlign: "left",
         wordWrap: "break-word",
-        backgroundColor: "#fff"
+        backgroundColor: "#fff",
+        padding: "10px"
       };
       this.funcKeyCodes = [
         112,
@@ -463,6 +657,9 @@ export default (function() {
       this.trees = {};
       this.currentPath = {};
       //   this.on = Base.prototype.on
+      this.rangeModifiedEvent = new CustomEvent("rangeModified", {
+        bubbles: true
+      });
     }
 
     // setStyle(index) {
@@ -722,7 +919,13 @@ export default (function() {
       newPara.parent = this.trees;
       this.trees.children.push(newPara);
       // setTimeout(() => {
-      const newinlineEle = new ElementNode("span", "abdl", {}, {}, []);
+      const newinlineEle = new ElementNode(
+        "span",
+        "abdl",
+        { color: "aqua" },
+        {},
+        []
+      );
       console.log("newinlineEle.id", newinlineEle.id);
       newinlineEle.parent = newPara;
       const ano1 = new ElementNode(
@@ -777,7 +980,7 @@ export default (function() {
       try {
         if (window.getSelection().getRangeAt(0)) {
           this.range = window.getSelection().getRangeAt(0);
-          // console.log("saved", this.range);
+          console.log("saved", this.range);
           this.store.commit("saveRangeBeforeTextChange", {
             rangeFactor: {
               startTextTankAncestor: window.getSelection().getRangeAt(0)
@@ -796,14 +999,16 @@ export default (function() {
     }
     init(el) {
       const ed = this;
-      console.log("ed:this", this, ed);
-      const container = document.getElementById(el);
+      const container = el;
+      // const container = document.getElementById(el);
+      // const container = document.createElement("DIV");
       this.dom7 = container;
       container.setAttribute("contenteditable", "");
       container.innerHTML = "";
       // console.log()
       ed.on(container, "keydown", methods.handlerInput.bind(this));
-      ed.on(container, "keypress", methods.donothing.bind(this));
+      ed.on(container, "keyup", methods.donothing.bind(this));
+      // ed.on(container, "keypress", methods.donothing.bind(this));
       ed.on(container, "compositionstart", methods.start.bind(this));
       ed.on(container, "compositionend", methods.end.bind(this));
       ed.on(container, "click", methods.checkRange.bind(this));
@@ -813,7 +1018,6 @@ export default (function() {
         "mouseleave",
         methods.checkRangeWhenNoCollapsed.bind(this)
       );
-
       // 设置样式
       Object.keys(this.style).forEach(item => {
         container.style[item] = this.style[item];

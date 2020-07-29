@@ -16,27 +16,27 @@ export const regularInput = {
    * @param {String} keyData
    */
   sceneDirectMode: (keyData, style, range, trees, store) => {
-    console.log("watcherTrigger", range.watcherTrigger);
+    // console.log("watcherTrigger", range.watcherTrigger);
     saveRange(store);
     /**
      * 待追加特殊字符转义 如空格转&nbsp;
      * https://tool.oschina.net/commons?type=2
      */
     keyData = keyData.replace(" ", "&nbsp;");
-    console.log("转义后的字符", keyData);
-    console.log("saveRangefromrebuild", range.watcherTrigger);
+    // console.log("转义后的字符", keyData);
+    // console.log("saveRangefromrebuild", range.watcherTrigger);
     // 两个场景下,不能正确地调整range,一个场景是range.commonAncestorContainer是P元素,且innerText为空,此时将要触发按键;
     // 另一种场景在上一种场景的基础之下在debounce之内连续按键,导致了range.commonAncestorContainer是text节点,但range.commonAncestorContainer.parentNode是P元素(因为连续操作被debounce忽略,导致来不及处理range,场景1变成了场景2)
     // 此种场景为在空段落中输入内容,此时将创建一个span
     if (range.commonAncestorContainer.tagName === "P") {
-      console.log("for this moment");
+      // console.log("for this moment");
       const currentOperateObj = range.commonAncestorContainer;
       // findTargetNode(currentOperateObj, trees).then(async res => {
       // if (res.children.length === 1 && res.children[0].tag === "br") {
       //   res.children.pop();
       // }
       const res = findTargetNode(currentOperateObj, trees);
-      console.log("res.children", res.children);
+      // console.log("res.children", res.children);
       const span = new ElementNode("span", keyData, style);
       // 0424 追加父节点属性parent
       span.parent = res;
@@ -68,7 +68,7 @@ export const regularInput = {
       };
     } else if (range.commonAncestorContainer.tagName === "BR") {
       // 在空行进行输入，将创建一个span元素,并且删除br元素，此时commonAncestorContainer是br，需要获取它的parentNode也就是P节点
-      console.log("空行输入", range.commonAncestorContainer);
+      // console.log("空行输入", range.commonAncestorContainer);
       const currentOperateObj = range.commonAncestorContainer.parentNode;
       // findTargetNode(currentOperateObj, trees).then(async res => {
 
@@ -77,7 +77,7 @@ export const regularInput = {
       span.parent = target;
       target.children.push(span);
       target.children.shift();
-      console.log("span", span.toString, "\n", target.toString());
+      // console.log("span", span.toString, "\n", target.toString());
       clearRange();
       // setTimeout(() => {
       //   redirectRange(store, {
@@ -92,7 +92,7 @@ export const regularInput = {
       //     endId: span.id,
       //     endOffset: span.text.length
       //   });
-      //   // console.timeEnd("-----timer-----\n");
+        // console.timeEnd("-----timer-----\n");
       // }, 0);
       return {
         startId: span.id,
@@ -106,7 +106,7 @@ export const regularInput = {
       range.commonAncestorContainer.parentNode.tagName === "P"
     ) {
       // if (res.tag !== "span" && range.commonAncestorContainer.nodeType===3) {
-      console.log("不声不响?", range.commonAncestorContainer.nodeValue);
+      // console.log("不声不响?", range.commonAncestorContainer.nodeValue);
       const currentOperateObj = range.commonAncestorContainer.parentNode;
       // findTargetNode(currentOperateObj, trees).then(async res => {
       const res = findTargetNode(currentOperateObj, trees);
@@ -115,7 +115,7 @@ export const regularInput = {
         range.commonAncestorContainer.nodeValue,
         style
       );
-      console.log(span);
+      // console.log(span);
       span.parent = res;
       res.children.push(span);
       res.children.shift();
@@ -151,12 +151,12 @@ export const regularInput = {
         0,
         range.startOffset
       );
-      console.log("partAText", partAText);
+      // console.log("partAText", partAText);
       const partBText = range.commonAncestorContainer.innerText.substr(
         range.endOffset,
         range.commonAncestorContainer.innerText.length
       );
-      console.log("partBText", partBText);
+      // console.log("partBText", partBText);
       const currentOperateObj = range.commonAncestorContainer;
       // findTargetNode(currentOperateObj, trees).then(async res => {
 
@@ -178,7 +178,7 @@ export const regularInput = {
         //     endId: target.id,
         //     endOffset: partAText.length + 1
         //   });
-        //   // console.timeEnd("-----timer-----\n");
+          // console.timeEnd("-----timer-----\n");
         // }, 0);
         return {
           startId: target.id,
@@ -187,7 +187,7 @@ export const regularInput = {
           endOffset: partAText.length + 1
         };
       } else {
-        console.error("unexcept raneg", range);
+        // console.error("unexcept raneg", range);
       }
       // });
       return;
@@ -196,12 +196,12 @@ export const regularInput = {
         0,
         range.startOffset
       );
-      console.log("partAText", partAText);
+      // console.log("partAText", partAText);
       const partBText = range.commonAncestorContainer.nodeValue.substr(
         range.endOffset,
         range.commonAncestorContainer.nodeValue.length
       );
-      console.log(partAText, partBText);
+      // console.log(partAText, partBText);
       const currentOperateObj = range.commonAncestorContainer.parentNode;
       // findTargetNode(currentOperateObj, trees).then(async res => {
       // console.log('res',res)
@@ -209,7 +209,7 @@ export const regularInput = {
       const res = findTargetNode(currentOperateObj, trees);
       const target = res;
       if (range.watcherTrigger !== "OFF") {
-        console.log("normallll", target);
+        // console.log("normallll", target);
         const currentNodeValue = partAText + keyData + partBText;
         // console.error("--------修改值---------", currentNodeValue);
         target.text = currentNodeValue;
@@ -217,7 +217,7 @@ export const regularInput = {
         clearRange();
         range.watcherTrigger = "ON";
         // setTimeout(() => {
-        console.log("target", target);
+        // console.log("target", target);
         // redirectRange(store, {
         //   startId: target.id,
         //   startOffset: partAText.length + 1,
@@ -255,7 +255,7 @@ export const regularInput = {
         newStyleSpan,
         partBContainer
       );
-      console.log("即将抛出", newStyleSpan, target.parent.children);
+      // console.log("即将抛出", newStyleSpan, target.parent.children);
       clearRange();
       // setTimeout(() => {
       // redirectRange(store, {
@@ -291,8 +291,8 @@ export const regularInput = {
     // // 0419有一个问题在于,当一个P级元素删除晚全部文本后,确实是会留下一个br站位保持换行,但是在此基础上新添加的文本是不在span标签中的,因而会对后续的trees造成影响,因此在这里追加一个判断,当currentOperateObj不为span时,创造一个span添加到P里
   },
   sceneComposiveMode: (wordKeeper, style, range, trees, store) => {
-    console.log("sceneComposiveMode.range", range);
-    console.log("watcherTrigger", range.watcherTrigger);
+    // console.log("sceneComposiveMode.range", range);
+    // console.log("watcherTrigger", range.watcherTrigger);
     if (range.startContainer.nodeType === 3) {
       // console.log("直球！");
       const currentOperateObj = range.commonAncestorContainer.parentNode;
@@ -300,24 +300,24 @@ export const regularInput = {
 
       let target = findTargetNode(currentOperateObj, trees);
       if (range.watcherTrigger !== "OFF") {
-        console.log(
-          "正在受影响的实例",
-          range.startContainer,
-          range.startOffset,
-          range.startOffset + wordKeeper.length
-        );
+        // console.log(
+        //   "正在受影响的实例",
+        //   range.startContainer,
+        //   range.startOffset,
+        //   range.startOffset + wordKeeper.length
+        // );
         const currentNodeValue = range.commonAncestorContainer.nodeValue;
-        console.log(currentNodeValue);
+        // console.log(currentNodeValue);
         const startOffset = store.state.prevRangeFactor.startOffset;
         console.log(
           wordKeeper,
           "--------预览结果------------",
           currentNodeValue.substring(0, startOffset) + wordKeeper
         );
-        console.log(
-          "准备工作",
-          store.state.prevRangeFactor.startTextTankAncestor
-        );
+        // console.log(
+        //   "准备工作",
+        //   store.state.prevRangeFactor.startTextTankAncestor
+        // );
         range.watcherTrigger = "ON";
         saveRange(store);
         target.text = currentNodeValue;
@@ -339,7 +339,7 @@ export const regularInput = {
         //     endOffset: offset
         //   });
         // }, 0);
-        console.log('ready to return',target,offset)
+        // console.log("ready to return", target, offset);
         const id = target.id;
         return {
           startId: id,
@@ -349,16 +349,16 @@ export const regularInput = {
         };
       }
       const currentNodeValue = range.commonAncestorContainer.nodeValue;
-      console.log("currentNodeValue", currentNodeValue);
+      // console.log("currentNodeValue", currentNodeValue);
       // 求partA.text
       const partAText = currentNodeValue.substring(0, range.startOffset);
       target.text = partAText;
 
-      console.log("partAText", partAText);
+      // console.log("partAText", partAText);
       // 求新输入部分
       const newStyleSpan = new ElementNode(target.tag, wordKeeper, style);
       newStyleSpan.parent = target.parent;
-      console.log("newStyleSpan", newStyleSpan);
+      // console.log("newStyleSpan", newStyleSpan);
       // 求partB
       const partBText = currentNodeValue.substring(
         range.startOffset + wordKeeper.length
@@ -372,7 +372,7 @@ export const regularInput = {
       partBContainer.id += 1;
       partBContainer.parent = target.parent;
 
-      console.log("partBContainer", partBContainer);
+      // console.log("partBContainer", partBContainer);
       // 插入兄弟节点中
       const targetIndex = target.parent.children.findIndex(
         item => item.id === target.id
@@ -409,18 +409,57 @@ export const regularInput = {
         endOffset: offset
       };
       // });
+    } else if (range.startContainer.tagName === "SPAN") {
+      // range被其他API(如删除)重定向到span
+      // console.log("被重定向到span", range.startContainer.innerText, range.startOffset);
+      let target = findTargetNode(range.startContainer, trees);
+      // console.log(
+      //   "编辑前",
+      //   target.text.substring(0, range.startOffset),
+      //   '\n',
+      //   wordKeeper,
+      //   '\n',
+      //   target.text.substr(range.endOffset)
+      // );
+      const newvalue =
+        target.text.substring(0, range.startOffset) +
+        wordKeeper +
+        target.text.substr(range.endOffset);
+      // console.log("编辑完成", newvalue);
+      target.text = newvalue;
+      // const targetPara = target.parent;
+      // const newSpan = new ElementNode("span", wordKeeper, style);
+      // newSpan.parent = target;
+      // targetPara.children.unshift(newSpan);
+      // const id = newSpan.id;
+      // console.log("new range", {
+      //   startId: id,
+      //   startOffset: newSpan.text.length,
+      //   endId: id,
+      //   endOffset: newSpan.text.length
+      // });
+      const id = target.id;
+      const offset = range.startOffset + wordKeeper.length;
+      return {
+        startId: id,
+        startOffset: offset,
+        endId: id,
+        endOffset: offset
+      };
     } else if (range.startContainer.tagName === "P") {
       // 空段落
       // 节省性能，不用find方法
       const target = trees.children.find(
         item => item.id === range.startContainer.id
       );
-      const newSpan = new ElementNode("span", wordKeeper);
+      const newSpan = new ElementNode("span", wordKeeper, style);
       newSpan.parent = target;
+      // target.children.splice(0, 1, newSpan);
       if (target.children.length === 1 && target.children[0].tag === "br") {
+        // console.log("空段落输入，删除br，用span替代");
         target.children.splice(0, 1, newSpan);
       } else {
-        console.log("意料之外的target.children");
+        // console.log("意料之外的target.children", target);
         return;
       }
       clearRange();
@@ -446,16 +485,18 @@ export const regularInput = {
         endId: id,
         endOffset: newSpan.text.length
       };
+    } else {
+      // console.log("意料之外的range", range);
     }
   }
 };
 export const overwriteRangeInput = {
   sceneDirectMode: {
     spanParas: function(keyData, range, trees) {
-      console.log("跨p选取", range);
+      // console.log("跨p选取", range);
       // 判定为选区模式
       // 跨P选取
-      console.log("起点", range.startContainer);
+      // console.log("起点", range.startContainer);
       // startContainer是一个text节点
       if (range.startContainer.nodeType === 3) {
         const endDom = range.endContainer;
@@ -478,13 +519,13 @@ export const overwriteRangeInput = {
           const targetIndex = target.parent.children.findIndex(item => {
             return target.id === item.id;
           });
-          console.log("span节点在partA中的索引", targetIndex);
+          // console.log("span节点在partA中的索引", targetIndex);
           //  targetIndex+1为当事节点之后的span节点,从这个索引开始(包括自身)之后的所有节点全部弃置
           target.parent.children = target.parent.children.slice(
             0,
             targetIndex + 1
           );
-          console.log("A部分", target.parent, target.parent.children);
+          // console.log("A部分", target.parent, target.parent.children);
           target.parent.children[targetIndex].text = partAText;
           // 至此，partA已经处理好了
           const startParaIndex = trees.children.findIndex(item => {
@@ -501,18 +542,18 @@ export const overwriteRangeInput = {
           const restNodeInP = endPara.children.slice(partBTextIndex);
           restNodeInP[0].text = partBText;
           restNodeInP.forEach(item => (item.parent = target.parent.id));
-          console.log("restNodeInP", restNodeInP);
+          // console.log("restNodeInP", restNodeInP);
           target.parent.children.splice(
             target.parent.children.length,
             0,
             ...restNodeInP
           );
           // endPara.children = endPara.children.slice(partBTextIndex);
-          console.log("endPara.children", endPara.children);
-          console.log(startParaIndex, endParaIndex);
+          // console.log("endPara.children", endPara.children);
+          // console.log(startParaIndex, endParaIndex);
           // 删除沿途的P节点
-          console.log("开始删除");
-          console.log("优化测试");
+          // console.log("开始删除");
+          // console.log("优化测试");
           trees.children.splice(
             startParaIndex + 1,
             endParaIndex - startParaIndex
@@ -545,23 +586,23 @@ export const overwriteRangeInput = {
             endOffset: offset
           };
         } else if (endDom.tagName === "P") {
-          console.log("endDom.tagName === 'P'in input");
+          // console.log("endDom.tagName === 'P'in input");
           // findTargetNode(startObj, trees).then(async res => {
           const target = findTargetNode(startObj, trees);
           const partAText =
             target.text.substring(0, range.startOffset) + keyData;
-          console.log("partAText", partAText);
+          // console.log("partAText", partAText);
 
           const targetIndex = target.parent.children.findIndex(item => {
             return target.id === item.id;
           });
-          console.log("span节点在partA中的索引", targetIndex);
+          // console.log("span节点在partA中的索引", targetIndex);
           //  targetIndex+1为当事节点之后的span节点,从这个索引开始(包括自身)之后的所有节点全部弃置
           target.parent.children = target.parent.children.slice(
             0,
             targetIndex + 1
           );
-          console.log("A部分", target.parent, target.parent.children);
+          // console.log("A部分", target.parent, target.parent.children);
           target.parent.children[targetIndex].text = partAText;
 
           const startParaIndex = trees.children.findIndex(item => {
@@ -602,7 +643,7 @@ export const overwriteRangeInput = {
             endOffset: partAText.length
           };
         } else {
-          console.log("意料之外的endDom", endDom);
+          // console.log("意料之外的endDom", endDom);
           return;
         }
       }
@@ -611,11 +652,11 @@ export const overwriteRangeInput = {
         const startDom = range.startContainer;
         const endDom = range.endContainer;
         if (endDom.nodeType === 3) {
-          console.log(
-            "需要截取endDom字符串 in  input",
-            startDom,
-            endDom.parentNode
-          );
+          // console.log(
+          //   "需要截取endDom字符串 in  input",
+          //   startDom,
+          //   endDom.parentNode
+          // );
           // findTargetNode(endDom.parentNode, trees).then(async res => {
           const target = findTargetNode(endDom.parentNode, trees);
           // console.log("endDom", res);
@@ -631,21 +672,21 @@ export const overwriteRangeInput = {
           );
           // const partAText =
           const supposevalue = keyData + target.text.substring(range.endOffset);
-          console.log("若这是段落中的最后一个子节点，并且将被赋值为空字符串");
+          // console.log("若这是段落中的最后一个子节点，并且将被赋值为空字符串");
           // 若这是段落中的最后一个子节点，并且将被赋值为空字符串
           if (supposevalue === "" && targetIndex === 0) {
-            console.log("condition1");
+            // console.log("condition1");
             const br = new ElementNode("br");
             br.parent = target.parent;
             target.parent.children[targetIndex] = br;
           } else {
-            console.log("condition2");
+            // console.log("condition2");
             target.text = supposevalue;
             const restNodeInP = target.parent.children.slice(targetIndex);
             target.parent.children = restNodeInP;
           }
 
-          console.log("splice", startParaIndex, endParaIndex);
+          // console.log("splice", startParaIndex, endParaIndex);
           trees.children.splice(startParaIndex, endParaIndex - startParaIndex);
 
           clearRange();
@@ -732,12 +773,16 @@ export const overwriteRangeInput = {
     // 当选中一个段落的所有span时报错
     spanSpans: function(keyData, range, trees) {
       const startObj = range.startContainer.parentNode;
-      console.log("cross span", range.commonAncestorContainer, startObj);
+      console.log(
+        "cross span:sceneDirectMode:overwriteRangeInput",
+        range.commonAncestorContainer,
+        startObj
+      );
       // findTargetNode(startObj, trees).then(async res => {
 
       // console.log("res", res);
       const target = findTargetNode(startObj, trees);
-      console.log('target',target)
+      console.log("target", target);
       const partAText = target.text.substring(0, range.startOffset) + keyData;
       const partBText = range.endContainer.nodeValue.substr(
         range.endOffset,
@@ -765,7 +810,7 @@ export const overwriteRangeInput = {
       console.log("cishicike", target.parent.children);
       clearRange();
       if (target.parent.children.length === 0) {
-        console.log('branch1')
+        console.log("branch1");
         const br = new ElementNode("br");
         br.parent = target.parent;
         target.parent.children.push(br);
@@ -820,7 +865,7 @@ export const overwriteRangeInput = {
           partAText.length > 0
             ? target.id
             : target.parent.children[splitEndIndex].id;
-            console.log('id',id)
+        console.log("id", id);
         const offset = partAText.length;
         return {
           startOffset: offset,
@@ -901,7 +946,11 @@ export const overwriteRangeInput = {
     // store
     spanSpans: function(keyData, style, range, trees) {
       const startObj = range.startContainer.parentNode;
-      console.log("cross span", range.startContainer, startObj);
+      console.log(
+        "cross span:sceneComposiveMode:overwriteRangeInput",
+        range.startContainer,
+        startObj
+      );
       // findTargetNode(startObj, trees).then(async res => {
       // console.log("res", res);
       const target = findTargetNode(startObj, trees);

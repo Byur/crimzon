@@ -1,4 +1,14 @@
 // let _ = require("lodash");
+export function buildNewRange(rangeFactor) {
+  // console
+  const startContainer = document.getElementById(rangeFactor.startId);
+  const endContainer = document.getElementById(rangeFactor.endId);
+  console.log("startContainer", startContainer, "endContainer", endContainer)
+  const range = document.createRange();
+  range.setStart(startContainer.childNodes[0], rangeFactor.startOffset);
+  range.setEnd(endContainer.childNodes[0], rangeFactor.endOffset);
+  return range;
+}
 /**
  * @description 公共API，检测某段range对应的虚拟元素的list中是否全都含有特定的样式，返回一个布尔值
  * @param {Array} treedNodes_split
@@ -18,6 +28,7 @@ export function isAllActivated_switch(treedNodes_split, cssAttr) {
     return afterFilter.every(item => {
       // console.log("item.style:", item.style);
       // console.log("targetStyle:", item.style[attrPair[0]], attrPair[1]);
+      console.log("item in corefunction", item.style[attrPair[0]], attrPair[1])
       return item.style[attrPair[0]] === attrPair[1];
     });
   }
@@ -114,32 +125,32 @@ export function redirectRange(store, forNewRange) {
 }
 // 每次遍历节点的路径
 let currentPath = [];
- function getAncestorNode(htmlNode) {
+function getAncestorNode(htmlNode) {
   if (htmlNode.parentNode) {
     let upgradeNode = htmlNode.parentNode;
     if (upgradeNode.id == "origin") {
       // console.log("应该停下来了", upgradeNode);
-      return  upgradeNode;
+      return upgradeNode;
     } else {
       // 获取这个元素节点的的父元素ID加入
       currentPath.unshift(upgradeNode.id);
       // console.log("递归中", currentPath);
-      return  getAncestorNode(upgradeNode);
+      return getAncestorNode(upgradeNode);
     }
   }
 }
- function getGenerationTree(htmlNode) {
+function getGenerationTree(htmlNode) {
   // console.log("入参：", htmlNode);
   currentPath = [];
   // 从数组头部加入冒泡顺序上的第一个元素节点id,这会导致最后一个也就是距离origin最近的子元素将会排在数组第一位
   currentPath.unshift(htmlNode.id);
-   getAncestorNode(htmlNode);
+  getAncestorNode(htmlNode);
   // console.log("获取到路径", currentPath);
-  return  currentPath;
+  return currentPath;
 }
 
-export  function findTargetNode(htmlNode, trees) {
-  let res =  getGenerationTree(htmlNode);
+export function findTargetNode(htmlNode, trees) {
+  let res = getGenerationTree(htmlNode);
   // console.log("回调开始", res);
   let currentposi = trees;
   // console.log("trees", trees);
@@ -165,5 +176,5 @@ export  function findTargetNode(htmlNode, trees) {
     }
   }
   // console.log("循环结束", currentposi);
-  return  currentposi;
+  return currentposi;
 }
