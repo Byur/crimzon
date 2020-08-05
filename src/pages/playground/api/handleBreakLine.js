@@ -569,7 +569,7 @@ export default {
       //     endId: id
       //     // endOffset: partAText.length
       //   });
-        // console.log("insertIndex", insertIndex);
+      // console.log("insertIndex", insertIndex);
       // }, 0);
       // });
       const id = newPara.id;

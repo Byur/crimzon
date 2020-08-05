@@ -92,7 +92,7 @@ export const regularInput = {
       //     endId: span.id,
       //     endOffset: span.text.length
       //   });
-        // console.timeEnd("-----timer-----\n");
+      // console.timeEnd("-----timer-----\n");
       // }, 0);
       return {
         startId: span.id,
@@ -178,7 +178,7 @@ export const regularInput = {
         //     endId: target.id,
         //     endOffset: partAText.length + 1
         //   });
-          // console.timeEnd("-----timer-----\n");
+        // console.timeEnd("-----timer-----\n");
         // }, 0);
         return {
           startId: target.id,
@@ -208,6 +208,7 @@ export const regularInput = {
       // 使用span作为判断条件不是很严谨,该种异常出现于基于上一种直接在P元素中连续触发按键(range.commonAncestorContainer.tagName === "P"是debounce内只触发一次按键事件),会进入原先写有代码的判断分支,姑且现在这里做处理
       const res = findTargetNode(currentOperateObj, trees);
       const target = res;
+      console.log("test target text attr---------------", target);
       if (range.watcherTrigger !== "OFF") {
         // console.log("normallll", target);
         const currentNodeValue = partAText + keyData + partBText;

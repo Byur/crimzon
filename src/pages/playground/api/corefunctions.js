@@ -3,7 +3,7 @@ export function buildNewRange(rangeFactor) {
   // console
   const startContainer = document.getElementById(rangeFactor.startId);
   const endContainer = document.getElementById(rangeFactor.endId);
-  console.log("startContainer", startContainer, "endContainer", endContainer)
+  console.log("startContainer", startContainer, "endContainer", endContainer);
   const range = document.createRange();
   range.setStart(startContainer.childNodes[0], rangeFactor.startOffset);
   range.setEnd(endContainer.childNodes[0], rangeFactor.endOffset);
@@ -28,7 +28,7 @@ export function isAllActivated_switch(treedNodes_split, cssAttr) {
     return afterFilter.every(item => {
       // console.log("item.style:", item.style);
       // console.log("targetStyle:", item.style[attrPair[0]], attrPair[1]);
-      console.log("item in corefunction", item.style[attrPair[0]], attrPair[1])
+      console.log("item in corefunction", item.style[attrPair[0]], attrPair[1]);
       return item.style[attrPair[0]] === attrPair[1];
     });
   }
@@ -78,7 +78,7 @@ export function saveRange(store) {
 // 20200218添加补正参数startOffsetChange和endOffsetChange,用于在直接输入和输入法输入包括剪切粘贴的时候,把range调整到合理的位置
 export function rangeForTextChange(store, offsetFluctuation = 0) {
   let rangeAfter = store.state.prevRangeFactor;
-  // console.log("rangeAfter", rangeAfter);
+  console.log("rangeAfter", rangeAfter);
   let selection = window.getSelection();
   let newRange = document.createRange();
   // // range对象,通常是this.range
@@ -107,7 +107,7 @@ export function rangeForTextChange(store, offsetFluctuation = 0) {
 export function redirectRange(store, forNewRange) {
   // console.log("设置指定range", forNewRange.startId);
   // console.log(
-  //   "test get dom",
+  //   // "test get dom",
   //   forNewRange.startId,
   //   document.getElementById(forNewRange.startId)
   // );

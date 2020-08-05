@@ -15,7 +15,6 @@ export default {
     const ed = new Editor("ed", this.$store);
     // ed.init()
     console.log("editor outside of window", ed);
-
   }
 };
 </script>

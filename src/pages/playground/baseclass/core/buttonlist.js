@@ -1,5 +1,5 @@
 import Button from "../baseclass/Button";
-console.log("Button", Button);
+// console.log("Button", Button);
 export const bold = new Button(
   "bold",
   "switch",

@@ -33,74 +33,77 @@ const paintItAll_switch = function(
 };
 
 // eslint-disable-next-line no-unused-vars
-const paintItAll_volume = function(
-  cssAttr,
-  value,
-  elementList,
-  theSilentCartoGrapher
-) {
-  // const cssAttrName = cssAttr.split("_")[0];
-  // const cssAttrValue = cssAttr.split("_")[1];
-  if (theSilentCartoGrapher && elementList[0]) {
-    Object.assign(theSilentCartoGrapher, elementList[0].style);
-    theSilentCartoGrapher[cssAttr] = value;
-    console.log("修改制图机", theSilentCartoGrapher);
-    return;
-  }
-  if (elementList.length > 0) {
-    const flaten = elementList.flat(1);
-    const afterFilter = flaten.filter(item => {
-      return item.tag !== "br" && item.tag !== "p";
-    });
-    console.log("afterFilter", afterFilter);
-    afterFilter.forEach(item => {
-      console.log(`${item.text},${item.style[cssAttr]} to ${value}`);
-      item.style[cssAttr] = value;
-    });
-    console.log("done");
-    return;
-  }
+// const paintItAll_volume = function(
+//   cssAttr,
+//   value,
+//   elementList,
+//   theSilentCartoGrapher
+// ) {
+//   // const cssAttrName = cssAttr.split("_")[0];
+//   // const cssAttrValue = cssAttr.split("_")[1];
+//   if (theSilentCartoGrapher && elementList[0]) {
+//     Object.assign(theSilentCartoGrapher, elementList[0].style);
+//     theSilentCartoGrapher[cssAttr] = value;
+//     console.log("修改制图机", theSilentCartoGrapher);
+//     return;
+//   }
+//   if (elementList.length > 0) {
+//     const flaten = elementList.flat(1);
+//     const afterFilter = flaten.filter(item => {
+//       return item.tag !== "br" && item.tag !== "p";
+//     });
+//     console.log("afterFilter", afterFilter);
+//     afterFilter.forEach(item => {
+//       console.log(`${item.text},${item.style[cssAttr]} to ${value}`);
+//       item.style[cssAttr] = value;
+//     });
+//     console.log("done");
+//     return;
+//   }
 
-  return;
-};
+//   return;
+// };
 
-function changeStyle(elementList, theSilentCartoGrapher) {
-  if (this.type === "switch") {
-    // 添加样式
-    if (this.srcClass === this.deactivateIconClass) {
-      paintItAll_switch(
-        this.cssAttrDeactivated,
-        elementList,
-        theSilentCartoGrapher
-      );
-      this.srcClass = this.activateIconClass;
-      this.cssAttr = this.cssAttrActivated;
-      return;
-    }
-    // 撤销
-    else {
-      paintItAll_switch(
-        this.cssAttrActivated,
-        elementList,
-        theSilentCartoGrapher
-      );
-      this.srcClass = this.deactivateIconClass;
-      this.cssAttr = this.cssAttrDeactivated;
-      return;
-    }
-  }
-}
+// eslint-disable-next-line no-unused-vars
+// function changeStyle(elementList, theSilentCartoGrapher) {
+//   if (this.type === "switch") {
+//     // 添加样式
+//     if (this.srcClass === this.deactivateIconClass) {
+//       paintItAll_switch(
+//         this.cssAttrDeactivated,
+//         elementList,
+//         theSilentCartoGrapher
+//       );
+//       this.srcClass = this.activateIconClass;
+//       // this.cssAttr = this.cssAttrActivated;
+//       return;
+//     }
+//     // 撤销
+//     else {
+//       paintItAll_switch(
+//         this.cssAttrActivated,
+//         elementList,
+//         theSilentCartoGrapher
+//       );
+//       this.srcClass = this.deactivateIconClass;
+//       // this.cssAttr = this.cssAttrDeactivated;
+//       return;
+//     }
+//   }
+// }
 function isActived(boolean) {
-  console.log("this.buttonDom", this.buttonDom.children[0].classList);
+  // console.log("this.buttonDom", this.buttonDom.children[0].classList);
   if (boolean) {
     this.srcClass = this.activateIconClass;
+    // this.cssAttr = this.cssAttrActivated;
     this.buttonDom.children[0].classList.remove(this.deactivateIconClass);
   } else {
     this.srcClass = this.deactivateIconClass;
+    // this.cssAttr = this.cssAttrDeactivated;
     this.buttonDom.children[0].classList.remove(this.activateIconClass);
   }
   this.buttonDom.children[0].classList.add(this.srcClass);
-  console.log("buttonDom", this.buttonDom);
+  // console.log("button after check style", this);
   // this.
 }
 // 生成button的DOM结构
@@ -118,7 +121,35 @@ const buildButtonDom = function() {
   return cell;
 };
 
+// eslint-disable-next-line no-unused-vars
+/**
+ * @description 焦点模式下自由切换按钮的正反面，同步表面用于判断的数据如cssAttr
+ */
+function freeClick() {
+  console.log(
+    "--------free click-before change button style-----------\n",
+    this.srcClass,
+    "\n",
+    this.cssAttr
+  );
+  if (this.cssAttr === this.cssAttrActivated) {
+    console.log("blaze to frost?");
+    this.srcClass = this.deactivateIconClass;
+    this.cssAttr = this.cssAttrDeactivated;
+    this.buttonDom.children[0].classList.remove(this.activateIconClass);
+    this.buttonDom.children[0].classList.add(this.deactivateIconClass);
+    console.log("after shift frost-----------------", this.srcClass, this.cssAttr);
+    return;
+  }
 
+  console.log("frost to blaze?");
+  this.srcClass = this.activateIconClass;
+  this.cssAttr = this.cssAttrActivated;
+  this.buttonDom.children[0].classList.remove(this.deactivateIconClass);
+  this.buttonDom.children[0].classList.add(this.activateIconClass);
+  console.log("after shift blaze-----------------", this.srcClass, this.cssAttr);
+  return;
+}
 export default (function() {
   class Button extends Base {
     /**
@@ -127,7 +158,7 @@ export default (function() {
      * @param {String} type "volume" || "switch"
      * @param {String} description
      * @param {String} cssAttrActivated "border-color_red"
-     * @param {String} cssAttrDeactivated "border-color_normal"
+     * @param {String} cssAttrDeactivated "border-color_none"
      * @param {String} activateIconClass
      * @param {String} deactivateIconClass
      * @param {DOMObject} buttonDom dom reflection of button
@@ -162,7 +193,6 @@ export default (function() {
     }
     // // 初始化结构与事件绑定
     init() {
-
       const button = this;
 
       const cell = button.buildButtonDom();
@@ -185,7 +215,7 @@ export default (function() {
   }
   // Button.prototype = Base.prototype;
   Button.prototype.isActived = isActived;
-  Button.prototype.changeStyle = changeStyle;
+  Button.prototype.freeClick = freeClick;
   Button.prototype.buildButtonDom = buildButtonDom;
   // Button.prototype.init = function() {
   //   const cell = this.buildButtonDom();

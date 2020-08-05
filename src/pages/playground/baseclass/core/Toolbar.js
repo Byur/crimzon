@@ -5,7 +5,7 @@ export default (function() {
   class ToolBar {
     constructor() {
       // this.buttons = buttons;
-      this.buttonlist = [bold, italic];
+      this.buttonlist = [italic];
       this.container = {};
     }
     init(el) {
@@ -29,6 +29,22 @@ export default (function() {
       return this.buttonlist.find(item => {
         return item.buttonName === buttnName;
       });
+    }
+    // getButtonIndex(buttnName){
+    //   return
+    // }
+    updateButtonDom(buttnName) {
+      console.log(
+        "------------------updateButtonDom------------------",
+        this.container
+      );
+      const index = this.buttonlist.findIndex(item => {
+        return item.buttonName === buttnName;
+      });
+      const buttonDom = this.container.childNodes[index];
+      const newDom = this.buttonlist[index].init();
+      this.container.insertBefore(newDom, buttonDom);
+      this.container.removeChild(buttonDom);
     }
   }
   // ToolBar.prototype.xxx

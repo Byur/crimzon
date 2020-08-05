@@ -36,7 +36,7 @@ export default {
       // selection.removeAllRanges();
       // setTimeout(() => {
       //   const id = target.id;
-        // console.log(
+      // console.log(
       //     "---------------------------store------------------",
       //     store
       //   );
@@ -166,7 +166,7 @@ export default {
             endId: idForSaveStack,
             endOffset: partAText.length
           });
-            // console.log("longtimemytree", trees);
+          // console.log("longtimemytree", trees);
           // }, 0);
 
           const id = previousSibling.id;
@@ -245,13 +245,13 @@ export default {
 
       // console.log(targetIndex);
       // if (targetIndex >= 0) {
-        // console.log("退到前一位");
+      // console.log("退到前一位");
       //   if (paraIndex === 0) {
       //     if (partAText.length === 0) {
-            // console.log("删无可删");
+      // console.log("删无可删");
       //       return;
       //     } else if (partAText.length === 1) {
-            // console.log("该节点即将删除");
+      // console.log("该节点即将删除");
 
       //       const previousSibling =
       //         range.startContainer.parentNode.previousSibling;
@@ -259,7 +259,7 @@ export default {
       //       const offset = previousSibling.innerText.length;
 
       //       const idForSaveStack = range.startContainer.parentNode.id;
-            // console.log(
+      // console.log(
       //         "ready to move range",
       //         previousSibling,
       //         "gartgettext",
@@ -282,10 +282,10 @@ export default {
       //           endId: idForSaveStack,
       //           endOffset: partAText.length
       //         });
-              // console.log("longtimemytree", trees);
+      // console.log("longtimemytree", trees);
       //       }, 0);
       //     } else {
-            // console.log("paraIndex?", paraIndex);
+      // console.log("paraIndex?", paraIndex);
       //       target.text =
       //         partAText.substring(0, partAText.length - 1) + partBText;
       //       const br = await new ElementNode("br");
@@ -315,7 +315,7 @@ export default {
       //     // const paraList = trees.children
       //     const elderBro = trees.children[paraIndex - 1];
       //     // 上一个段落存在有意义的元素节点
-          // console.log("上一个段落存在有意义的元素节点");
+      // console.log("上一个段落存在有意义的元素节点");
       //     if (elderBro.children[0] && elderBro.children[0].tag !== "br") {
       //       // 新range为上一个段落的最后一个节点的末尾
       //       setTimeout(() => {
@@ -339,7 +339,7 @@ export default {
       //       }, 0);
       //     } else {
       //       // 上一个段落没有
-            // console.log("上一个段落没有实体元素,新range在段首");
+      // console.log("上一个段落没有实体元素,新range在段首");
       //       setTimeout(() => {
       //         const id = elderBro.id;
       //         redirectRange(store, {
@@ -500,7 +500,7 @@ export default {
 
     if (paraIndex > 0) {
       // console.log(
-        // "存在上一个段落,退回上一段,其中有可能上一段是个空段落,需要区别处理"
+      // "存在上一个段落,退回上一段,其中有可能上一段是个空段落,需要区别处理"
       // );
 
       // 如果paraIndex>0,退回上一段最后一个节点的末端

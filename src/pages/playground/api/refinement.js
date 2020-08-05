@@ -1,9 +1,9 @@
 import ElementNode from "../baseclass/tags";
 let _ = require("lodash");
-import { saveStack } from "../api/stack";
+// import { saveStack } from "../api/stack";
 import {
   // findTargetNode,
-  redirectRange,
+  // redirectRange,
   // rangeForTextChange,
   cleanEmptySibling
   // saveRange,
@@ -149,12 +149,12 @@ export const refinedNodesByRange_stage1 = {
           throwOut.push(item.children);
         });
         throwOut.push(copyPartOfTrees_EndPara);
-        console.log("ready to throw out when stage1", _.cloneDeep(throwOut));
+        // console.log("ready to throw out when stage1", _.cloneDeep(throwOut));
         return throwOut;
       } else if (range.endContainer.tagName === "P") {
         // 一个找到关联的trees节点的起点
         // 获取startContainer所在的P
-        console.log("well done", range.endContainer);
+        // console.log("well done", range.endContainer);
         const startParaID = range.startContainer.parentNode.parentNode.id;
         const startParaIndex = trees.children.findIndex(
           item => item.id === startParaID
@@ -233,26 +233,26 @@ export const refinedNodesByRange_stage1 = {
       item => item.id === range.endContainer.parentNode.id
     );
     const throwOut = effectedPara.children.slice(startIndex, endIndex + 1);
-    console.log("throwOut", throwOut);
+    // console.log("throwOut", throwOut);
     return throwOut;
   },
   withinSingleSpan: function(trees, range) {
-    console.log("range.startContainer", range.startContainer);
+    // console.log("range.startContainer", range.startContainer);
     const targetPara = trees.children.find(
       item => item.id === range.startContainer.parentNode.parentNode.id
     );
     const targetSpan = targetPara.children.find(
       item => item.id === range.startContainer.parentNode.id
     );
-    console.log("withinSingleSpan targetSpan", targetSpan);
+    // console.log("withinSingleSpan targetSpan", targetSpan);
     const throwOut = [];
     throwOut.push(targetSpan);
     return throwOut;
   },
   scenePointMode: function(trees, range) {
-    console.log("scenePointMode in stage1", range.startContainer);
+    // console.log("scenePointMode in stage1", range.startContainer);
     if (range.startContainer.nodeType === 3) {
-      console.log("range.startContainer", range.startContainer);
+      // console.log("range.startContainer", range.startContainer);
       const targetPara = trees.children.find(
         item => item.id === range.startContainer.parentNode.parentNode.id
       );
@@ -260,7 +260,7 @@ export const refinedNodesByRange_stage1 = {
         item => item.id === range.startContainer.parentNode.id
       );
 
-      console.log("scenePointMode targetNode", targetSpan);
+      // console.log("scenePointMode targetNode", targetSpan);
       const throwOut = [];
       throwOut.push(targetSpan);
       return throwOut;
@@ -273,29 +273,29 @@ export const refinedNodesByRange_stage1 = {
 };
 // stage2：改动trees,改动后返回精准list，供修改样式用
 export const refinedNodesByRange_stage2 = {
-  spanParas: function(elementList_Stage1, trees, range, store) {
+  spanParas: function(elementList_Stage1, trees, range) {
     if (range.startContainer.nodeType === 3) {
       if (range.endContainer.nodeType === 3) {
-        console.log("rear", elementList_Stage1);
+        // console.log("rear", elementList_Stage1);
         const startParaID = range.startContainer.parentNode.parentNode.id;
         const startParaIndex = trees.children.findIndex(
           item => item.id === startParaID
         );
-        console.log("startParaIndex", startParaIndex);
+        // console.log("startParaIndex", startParaIndex);
         const endParaID = range.endContainer.parentNode.parentNode.id;
         const endParaIndex = trees.children.findIndex(
           item => item.id === endParaID
         );
-        console.log("endParaIndex", endParaIndex);
+        // console.log("endParaIndex", endParaIndex);
 
         const startIndex = trees.children[startParaIndex].children.findIndex(
           item => item.id === range.startContainer.parentNode.id
         );
-        console.log("startIndex", startIndex);
+        // console.log("startIndex", startIndex);
         const endIndex = trees.children[endParaIndex].children.findIndex(
           item => item.id === range.endContainer.parentNode.id
         );
-        console.log("endIndex", endIndex);
+        // console.log("endIndex", endIndex);
 
         const partA = elementList_Stage1[0][0];
         const partAText = partA.text.substring(0, range.startOffset);
@@ -327,16 +327,16 @@ export const refinedNodesByRange_stage2 = {
           0,
           partB_rest_container
         );
-        console.log("elementList_Stage1", elementList_Stage1);
+        // console.log("elementList_Stage1", elementList_Stage1);
 
         // 开头段
         const beforeConcat_paraA = trees.children[
           startParaIndex
         ].children.slice(0, startIndex);
-        console.log(
-          "beforeConcat_paraA",
-          beforeConcat_paraA.concat(elementList_Stage1[0])
-        );
+        // console.log(
+        //   "beforeConcat_paraA",
+        //   beforeConcat_paraA.concat(elementList_Stage1[0])
+        // );
 
         trees.children[startParaIndex].children = beforeConcat_paraA.concat(
           elementList_Stage1[0]
@@ -345,15 +345,15 @@ export const refinedNodesByRange_stage2 = {
         const beforeConcat_paraB = trees.children[endParaIndex].children.slice(
           endIndex + 1
         );
-        console.log(endParaIndex, beforeConcat_paraB);
-        console.log(
-          "beforeConcat_paraB",
-          // beforeConcat_paraB.concat(
-          elementList_Stage1[elementList_Stage1.length - 1].concat(
-            beforeConcat_paraB
-          )
-          // )
-        );
+        // console.log(endParaIndex, beforeConcat_paraB);
+        // console.log(
+        //   "beforeConcat_paraB",
+        //   // beforeConcat_paraB.concat(
+        //   elementList_Stage1[elementList_Stage1.length - 1].concat(
+        //     beforeConcat_paraB
+        //   )
+        //   // )
+        // );
 
         trees.children[endParaIndex].children = elementList_Stage1[
           elementList_Stage1.length - 1
@@ -366,7 +366,7 @@ export const refinedNodesByRange_stage2 = {
 
         const lastParaChildren =
           elementList_Stage2[elementList_Stage2.length - 1];
-        console.log("lastParaChildren", lastParaChildren);
+        // console.log("lastParaChildren", lastParaChildren);
 
         const lastParaChildren_new = lastParaChildren.slice(
           0,
@@ -376,7 +376,7 @@ export const refinedNodesByRange_stage2 = {
           elementList_Stage2.length - 1
         ] = lastParaChildren_new;
 
-        console.log("ready to throwOut", elementList_Stage2);
+        // console.log("ready to throwOut", elementList_Stage2);
         const forNewRange = {
           startId: elementList_Stage2[0][0].id,
           endId:
@@ -389,30 +389,31 @@ export const refinedNodesByRange_stage2 = {
               lastParaChildren_new.length - 1
             ].text.length
         };
-        setTimeout(function() {
-          redirectRange(store, _.cloneDeep(forNewRange));
-          saveStack(trees, store, forNewRange);
-        }, 0);
-        return elementList_Stage2;
+        // setTimeout(function() {
+        //   redirectRange(store, _.cloneDeep(forNewRange));
+        //   saveStack(trees, store, forNewRange);
+        // }, 0);
+        return { elementList: elementList_Stage2, rangeFactor: forNewRange };
       } else if (
         range.endContainer.tagName === "P" ||
         range.endContainer.tagName === "BR"
       ) {
-        console.log("medium", elementList_Stage1);
+        // console.log("medium", elementList_Stage1);
         const startParaID = range.startContainer.parentNode.parentNode.id;
         const startParaIndex = trees.children.findIndex(
           item => item.id === startParaID
         );
-        console.log("startParaIndex", startParaIndex);
+        // console.log("startParaIndex", startParaIndex);
         // 为了记忆range而声明endParaIndex
         const endParaID =
           range.startContainer.tagName === "P"
             ? range.endContainer.parentNode.parentNode.id
             : range.endContainer.parentNode.id;
+        // eslint-disable-next-line no-unused-vars
         const endParaIndex = trees.children.findIndex(
           item => item.id === endParaID
         );
-        console.log("endParaIndex", endParaIndex);
+        // console.log("endParaIndex", endParaIndex);
         // const endIndex = trees.children[endParaIndex].children.findIndex(
         //   item => {
         //     if (range.startContainer.tagName === "P") {
@@ -428,7 +429,7 @@ export const refinedNodesByRange_stage2 = {
         const startIndex = trees.children[startParaIndex].children.findIndex(
           item => item.id === range.startContainer.parentNode.id
         );
-        console.log("startIndex", startIndex);
+        // console.log("startIndex", startIndex);
         // const endIndex = trees.children[endParaIndex].children.findIndex(
         //   item => item.id === range.endContainer.parentNode.id
         // );
@@ -464,16 +465,16 @@ export const refinedNodesByRange_stage2 = {
         //   0,
         //   partB_rest_container
         // );
-        console.log("elementList_Stage1", elementList_Stage1);
+        // console.log("elementList_Stage1", elementList_Stage1);
 
         // 开头段
         const beforeConcat_paraA = trees.children[
           startParaIndex
         ].children.slice(0, startIndex);
-        console.log(
-          "beforeConcat_paraA",
-          beforeConcat_paraA.concat(elementList_Stage1[0])
-        );
+        // console.log(
+        //   "beforeConcat_paraA",
+        //   beforeConcat_paraA.concat(elementList_Stage1[0])
+        // );
 
         trees.children[startParaIndex].children = beforeConcat_paraA.concat(
           elementList_Stage1[0]
@@ -498,18 +499,18 @@ export const refinedNodesByRange_stage2 = {
 
         // 浅拷贝elementList_Stage1
         const elementList_Stage2 = elementList_Stage1.slice(0);
-        console.log(_.cloneDeep(elementList_Stage1));
+        // console.log(_.cloneDeep(elementList_Stage1));
         elementList_Stage2[0] = elementList_Stage2[0].slice(1);
 
         // elementList_Stage2.length - 2是个空段落
         const lastParaChildren =
           elementList_Stage2[elementList_Stage2.length - 1];
-        console.log("lastParaChildren", lastParaChildren);
+        // console.log("lastParaChildren", lastParaChildren);
         const lastParaChildren_new = lastParaChildren.slice(
           0,
           lastParaChildren.length - 1
         );
-        console.log("ready to throwOut1", elementList_Stage2);
+        // console.log("ready to throwOut1", elementList_Stage2);
         elementList_Stage2[
           elementList_Stage2.length - 1
         ] = lastParaChildren_new;
@@ -520,19 +521,19 @@ export const refinedNodesByRange_stage2 = {
           endOffset: _.last(elementList_Stage2[elementList_Stage2.length - 2])
             .text.length
         };
-        console.log("endId", forNewRange.endId);
-        setTimeout(function() {
-          redirectRange(store, _.cloneDeep(forNewRange));
-          saveStack(trees, store, forNewRange);
-        }, 0);
-        return elementList_Stage2;
+        // console.log("endId", forNewRange.endId);
+        // setTimeout(function() {
+        //   redirectRange(store, _.cloneDeep(forNewRange));
+        //   saveStack(trees, store, forNewRange);
+        // }, 0);
+        return { elementList: elementList_Stage2, rangeFactor: forNewRange };
       }
     } else if (
       range.startContainer.tagName === "P" ||
       range.startContainer.tagName === "BR"
     ) {
       if (range.endContainer.nodeType === 3) {
-        console.log("medium well", _.cloneDeep(elementList_Stage1));
+        // console.log("medium well", _.cloneDeep(elementList_Stage1));
         // 为了记忆range，声明startParaIndex
         // const startParaID =
         //   range.startContainer.tagName === "P"
@@ -546,7 +547,7 @@ export const refinedNodesByRange_stage2 = {
         const endParaIndex = trees.children.findIndex(
           item => item.id === endParaID
         );
-        console.log("endParaIndex", endParaIndex);
+        // console.log("endParaIndex", endParaIndex);
 
         // const startIndex = trees.children[startParaIndex].children.findIndex(
         //   item => item.id === range.startContainer.parentNode.id
@@ -555,7 +556,7 @@ export const refinedNodesByRange_stage2 = {
         const endIndex = trees.children[endParaIndex].children.findIndex(
           item => item.id === range.endContainer.parentNode.id
         );
-        console.log("endIndex", endIndex);
+        // console.log("endIndex", endIndex);
 
         const partA = elementList_Stage1[0][0];
         const partAText = partA.text.substring(0, range.startOffset);
@@ -591,7 +592,7 @@ export const refinedNodesByRange_stage2 = {
           0,
           partB_rest_container
         );
-        console.log("elementList_Stage1", elementList_Stage1);
+        // console.log("elementList_Stage1", elementList_Stage1);
 
         // 开头段
         // const beforeConcat_paraA = trees.children[
@@ -609,15 +610,15 @@ export const refinedNodesByRange_stage2 = {
         const beforeConcat_paraB = trees.children[endParaIndex].children.slice(
           endIndex + 1
         );
-        console.log(endParaIndex, beforeConcat_paraB);
-        console.log(
-          "beforeConcat_paraB",
-          // beforeConcat_paraB.concat(
-          elementList_Stage1[elementList_Stage1.length - 1].concat(
-            beforeConcat_paraB
-          )
-          // )
-        );
+        // console.log(endParaIndex, beforeConcat_paraB);
+        // console.log(
+        //   "beforeConcat_paraB",
+        //   // beforeConcat_paraB.concat(
+        //   elementList_Stage1[elementList_Stage1.length - 1].concat(
+        //     beforeConcat_paraB
+        //   )
+        //   // )
+        // );
 
         trees.children[endParaIndex].children = elementList_Stage1[
           elementList_Stage1.length - 1
@@ -630,12 +631,12 @@ export const refinedNodesByRange_stage2 = {
 
         const lastParaChildren =
           elementList_Stage2[elementList_Stage2.length - 1];
-        console.log("lastParaChildren", _.last(lastParaChildren));
+        // console.log("lastParaChildren", _.last(lastParaChildren));
 
         elementList_Stage2[
           elementList_Stage2.length - 1
         ] = lastParaChildren.slice(0, lastParaChildren.length - 1);
-        console.log("ready to throwOut", elementList_Stage2);
+        // console.log("ready to throwOut", elementList_Stage2);
 
         // const startContainer =
         // range.endContainer.nodeType === 3,所以，partB会被分割，所以lastParaChildren的最后一个元素，不应该是endContainer，真正的endContainer应该是倒数第二个元素
@@ -645,16 +646,16 @@ export const refinedNodesByRange_stage2 = {
           startOffset: 0,
           endOffset: lastParaChildren[lastParaChildren.length - 2].text.length
         };
-        setTimeout(function() {
-          redirectRange(store, _.cloneDeep(forNewRange));
-          saveStack(trees, store, forNewRange);
-        }, 0);
-        return elementList_Stage2;
+        // setTimeout(function() {
+        //   redirectRange(store, _.cloneDeep(forNewRange));
+        //   saveStack(trees, store, forNewRange);
+        // }, 0);
+        return { elementList: elementList_Stage2, rangeFactor: forNewRange };
       } else if (
         range.endContainer.tagName === "P" ||
         range.endContainer.tagName === "BR"
       ) {
-        console.log("well done", _.cloneDeep(elementList_Stage1));
+        // console.log("well done", _.cloneDeep(elementList_Stage1));
         // 开局为br，结尾也为br
 
         const forNewRange = {
@@ -664,17 +665,17 @@ export const refinedNodesByRange_stage2 = {
           endOffset: _.last(elementList_Stage1[elementList_Stage1.length - 1])
             .text.length
         };
-        console.log(forNewRange);
-        setTimeout(function() {
-          redirectRange(store, _.cloneDeep(forNewRange));
-          saveStack(trees, store, forNewRange);
-        }, 0);
-        return elementList_Stage1;
+        // console.log(forNewRange);
+        // setTimeout(function() {
+        //   redirectRange(store, _.cloneDeep(forNewRange));
+        //   saveStack(trees, store, forNewRange);
+        // }, 0);
+        return { elementList: elementList_Stage1, rangeFactor: forNewRange };
       }
     }
   },
-  spanSpans: function(elementList_Stage1, trees, range, store) {
-    console.log("refinedNodesByRange_stage2,spanSpans入参", elementList_Stage1);
+  spanSpans: function(elementList_Stage1, trees, range) {
+    // console.log("refinedNodesByRange_stage2,spanSpans入参", elementList_Stage1);
     const startParaID = range.startContainer.parentNode.parentNode.id;
     const startParaIndex = trees.children.findIndex(
       item => item.id === startParaID
@@ -686,11 +687,11 @@ export const refinedNodesByRange_stage2 = {
     const endIndex = trees.children[startParaIndex].children.findIndex(
       item => item.id === range.endContainer.parentNode.id
     );
-    console.log("startIndex", startIndex, "endIndex", endIndex);
+    // console.log("startIndex", startIndex, "endIndex", endIndex);
     const partA = elementList_Stage1[0];
     const partAText = partA.text.substring(0, range.startOffset);
     const partAText_rest = partA.text.substring(range.startOffset);
-    console.log("partAText", partAText);
+    // console.log("partAText", partAText);
     const partA_rest_container = new ElementNode("span");
     partA_rest_container.parent = partA.parent;
     partA_rest_container.tag = partA.tag;
@@ -700,7 +701,7 @@ export const refinedNodesByRange_stage2 = {
 
     const partB = elementList_Stage1[elementList_Stage1.length - 1];
     const partBText = partB.text.substring(0, range.endOffset);
-    console.log("partBText", partBText);
+    // console.log("partBText", partBText);
     const partBText_rest = partB.text.substring(range.endOffset);
     const partB_rest_container = new ElementNode("span");
     partB_rest_container.tag = partB.tag;
@@ -713,7 +714,7 @@ export const refinedNodesByRange_stage2 = {
 
     elementList_Stage1.splice(1, 0, partA_rest_container);
     elementList_Stage1.splice(endIndex + 1 + 1, 0, partB_rest_container);
-    console.log("即将插入", elementList_Stage1);
+    // console.log("即将插入", elementList_Stage1);
     trees.children[startParaIndex].children.splice(
       startIndex,
       endIndex - startIndex + 1,
@@ -730,15 +731,15 @@ export const refinedNodesByRange_stage2 = {
       startOffset: 0,
       endOffset: elementList_Stage2[elementList_Stage2.length - 1].text.length
     };
-    setTimeout(function() {
-      redirectRange(store, _.cloneDeep(forNewRange));
-      saveStack(trees, store, forNewRange);
-    }, 0);
-    return elementList_Stage2;
+    // setTimeout(function() {
+    //   redirectRange(store, _.cloneDeep(forNewRange));
+    //   saveStack(trees, store, forNewRange);
+    // }, 0);
+    return { elementList: elementList_Stage2, rangeFactor: forNewRange };
   },
-  withinSingleSpan: function(elementList_Stage1, trees, range, store) {
+  withinSingleSpan: function(elementList_Stage1, trees, range) {
     const target = elementList_Stage1[0];
-    console.log("elementList_Stage1 in stage2", target.text);
+    // console.log("elementList_Stage1 in stage2", target.text);
     const targetPara = target.parent;
     const startIndex = targetPara.children.findIndex(
       item => item.id === target.id
@@ -766,11 +767,15 @@ export const refinedNodesByRange_stage2 = {
     // partA_rest_container,partB_rest_container添加在startIndex之后
     targetPara.children.splice(startIndex + 1, 0, partA_rest_container, partB);
     cleanEmptySibling(trees);
-    console.log("ready to throwOut", partA_rest_container);
+    // console.log("ready to throwOut", partA_rest_container);
     // console.log("withinSingleSpan targetNode", targetSpan);
-    const throwOut = [];
-    throwOut.push(partA_rest_container);
+    const elementList_Stage2 = [];
+    elementList_Stage2.push(partA_rest_container);
 
+    // console.log(
+    //   "---------------------------------------------test before dom update",
+    //   trees
+    // );
     const forNewRange = {
       startId: partA_rest_container.id,
       endId: partA_rest_container.id,
@@ -778,28 +783,28 @@ export const refinedNodesByRange_stage2 = {
       endOffset: partA_rest_container.text.length
     };
     // console.log("ready to flash back", _.cloneDeep(targetPara.children));
-    setTimeout(function() {
-      redirectRange(store, _.cloneDeep(forNewRange));
-      saveStack(trees, store, forNewRange);
-    }, 0);
+    // setTimeout(function() {
+    //   redirectRange(store, _.cloneDeep(forNewRange));
+    //   saveStack(trees, store, forNewRange);
+    // }, 0);
 
-    return throwOut;
+    return { elementList: elementList_Stage2, rangeFactor: forNewRange };
   },
 
-  scenePointMode: function(trees, range, store) {
-    console.log("scenePointMode in stage2", range.startContainer);
+  scenePointMode: function(trees, range) {
+    // console.log("scenePointMode in stage2", range.startContainer);
     if (range.startContainer.nodeType === 3) {
-      console.log("range.startContainer", range.startContainer);
+      // console.log("range.startContainer", range.startContainer);
       const targetPara = trees.children.find(
         item => item.id === range.startContainer.parentNode.parentNode.id
       );
       const targetSpan = targetPara.children.find(
         item => item.id === range.startContainer.parentNode.id
       );
-      console.log("scenePointMode targetNode", targetSpan);
+      // console.log("scenePointMode targetNode", targetSpan);
       const throwOut = [];
       throwOut.push(targetSpan);
-      console.log("ready to throwout scenePointMode in stage2", throwOut);
+      // console.log("ready to throwout scenePointMode in stage2", throwOut);
       // currentStyle = targetSpan.style;
       // this.theSilentCartoGrapher = targetSpan.style;
       // range不变
@@ -809,11 +814,11 @@ export const refinedNodesByRange_stage2 = {
         startOffset: range.startOffset,
         endOffset: range.endOffset
       };
-      setTimeout(function() {
-        redirectRange(store, _.cloneDeep(forNewRange));
-        saveStack(trees, store, forNewRange);
-      }, 0);
-      return [];
+      // setTimeout(function() {
+      //   redirectRange(store, _.cloneDeep(forNewRange));
+      //   saveStack(trees, store, forNewRange);
+      // }, 0);
+      return { elementList: throwOut, rangeFactor: forNewRange };
     } else {
       console.log("unexcept range", range);
       return [];
