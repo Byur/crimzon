@@ -2,7 +2,12 @@ import Base from "./baseclass_base";
 
 import Core from "./editor_core";
 import Toolbar from "./Toolbar";
-import { isAllActivated_switch } from "../../api/corefunctions";
+
+import {
+  // eslint-disable-next-line no-unused-vars
+  compareNCombine,
+  isAllActivated_switch
+} from "../../api/corefunctions";
 // import { read } from "./database";
 import {
   // backspace,
@@ -21,8 +26,7 @@ function loadStyleDynamited() {
   link.rel = "stylesheet";
   link.type = "text/css";
   // link.href = url;
-  link.appendChild(
-    document.createTextNode(`
+  var styleText = document.createTextNode(`
   #toolbar {
     display: flex;
     width: 100%;
@@ -33,9 +37,6 @@ function loadStyleDynamited() {
     height: 25px;
     background-color: rgba(255, 255, 255, 1);
     position: relative;
-    /* // justify-content: center;
-    // align-items: center;
-    // border: 1px solid #ccc; */
   }
   #toolbar .cell:hover {
   background-color: rgba(134, 134, 134, 0.3);
@@ -59,8 +60,10 @@ function loadStyleDynamited() {
   display: block;
   width: 40px;
   font-size: 8px;
-  }`)
-  );
+  }
+  `);
+
+  link.appendChild(styleText);
   document.getElementsByTagName("head")[0].appendChild(link);
 }
 // eslint-disable-next-line no-unused-vars
@@ -71,14 +74,18 @@ function loadStyleDynamited() {
  * @param {Object} theSilentCartoGrapher 位于全局的记录选区元素和新元素样式的对象
  */
 const paintItAll_switch = function(
+  // context,
   cssAttr,
   elementList,
   theSilentCartoGrapher
 ) {
   const cssAttrName = cssAttr.split("_")[0];
   const cssAttrValue = cssAttr.split("_")[1];
-  // console.log("this in paintItAll_switch", this);
+  console.log("this in paintItAll_switch", this);
   if (theSilentCartoGrapher && elementList[0]) {
+    // theSilentCartoGrapher = elementList[0].style;
+    // 进一步需要改造成遍历两个object的属性，只有他们属性的值同时有意义的时候，才能够将其覆盖，不允许新建；
+    // compareNCombine(theSilentCartoGrapher,elementList[0].style)
     Object.assign(theSilentCartoGrapher, elementList[0].style);
     theSilentCartoGrapher[cssAttrName] = cssAttrValue;
     console.log("修改制图机", theSilentCartoGrapher);
@@ -106,19 +113,40 @@ const paintItAll_switch = function(
  * @param {Object} theSilentCartoGrapher 位于全局的记录选区元素和新元素样式的对象
  */
 function changeStyle(editor, elementList, theSilentCartoGrapher) {
-  console.log("change style in component", theSilentCartoGrapher, this);
+  console.log(
+    "change style in component",
+    theSilentCartoGrapher,
+    this.currentStatus
+  );
   if (this.type === "switch") {
+    // 检测该段样式与当前按钮样式是否匹配，若不匹配，点击时，将与当前状态样式相反的cssAttr手动传入到paintItAll_switch中，给theSilentCartoGrapher赋值
+
+    console.log("当前按钮相对样式是否被激活status");
     if (theSilentCartoGrapher) {
       // 检测该段样式与当前按钮样式是否匹配，若不匹配，点击时，将与当前状态样式相反的cssAttr手动传入到paintItAll_switch中，给theSilentCartoGrapher赋值
-      this.freeClick();
-      editor.toolbar.updateButtonDom(this.buttonName);
-      paintItAll_switch(this.cssAttr, elementList, theSilentCartoGrapher);
-
+      // 首次触发时微调，currentStatus手动识别一次
+      if (this.currentStatus === null) {
+        this.currentStatus = isAllActivated_switch(elementList, this.cssAttr);
+      }
+      this.freeClick(Boolean(this.currentStatus));
+      // editor.toolbar.updateButtonDom(this.buttonName);
+      const willSetCssAttr = this.currentStatus
+        ? this.cssAttrActivated
+        : this.cssAttrDeactivated;
+      paintItAll_switch(
+        // editor,
+        willSetCssAttr,
+        elementList,
+        theSilentCartoGrapher
+      );
+      editor.core.range.watcherTrigger = "OFF";
+      console.log(editor.core.range);
       return;
     }
     // 添加样式
     if (this.srcClass === this.deactivateIconClass) {
       paintItAll_switch(
+        // editor,
         this.cssAttrActivated,
         elementList,
         theSilentCartoGrapher
@@ -130,6 +158,7 @@ function changeStyle(editor, elementList, theSilentCartoGrapher) {
     // 撤销
     else {
       paintItAll_switch(
+        // editor,
         this.cssAttrDeactivated,
         elementList,
         theSilentCartoGrapher
@@ -183,6 +212,7 @@ function checkStyle(range, trees, index) {
         console.log("item", item);
         if (item.type === "switch") {
           const boolean = isAllActivated_switch(receive, item.cssAttr);
+          item.currentStatus = boolean;
           console.log("inside vue instance", boolean);
           item.isActived(boolean);
         }
@@ -196,6 +226,7 @@ function checkStyle(range, trees, index) {
         console.log("item", item);
         if (item.type === "switch") {
           const boolean = isAllActivated_switch(receive, item.cssAttr);
+          item.currentStatus = boolean;
           console.log("inside vue instance", boolean, item);
           item.isActived(boolean);
         }
@@ -220,6 +251,7 @@ function checkStyle(range, trees, index) {
       } else {
         if (item.type === "switch") {
           const boolean = isAllActivated_switch(receive, item.cssAttr);
+          // item.currentStatus = boolean;
           console.log("inside vue instance", boolean, item);
           // console.log("")
           item.isActived(boolean);
@@ -245,28 +277,25 @@ function checkStyle(range, trees, index) {
  * 2：改造方案，保存trees弃用indexedDB，在全局内存储trees，
  */
 
-// function core(){
-
-//   return obj
-// }
-
 export default (function() {
   const CrimEditor = (function() {
     // console.log("Base", Base);
     class CrimEditor extends Base {
       /**
        * @description 构造函数
-       * @param {HTMLDivElement} el 文档树中现存的一个块级元素
-       * @param {Object} store 目前用vuex替代，将升级为indexedDB
+       * @param {HTMLElement} el 文档树中现存的一个块级元素
+       * @param {Object} store 目前用vuex替代
        */
       constructor(el, store) {
         super();
+        // 加载样式
         loadStyleDynamited("./style.css");
+        // 获取dom实体
         const dom77 = document.getElementById(el);
 
         // 状态管理
         this.store = {};
-        // 沉默的制图师
+        // 制图师
         this.theSilentCartoGrapher = {
           color: "#000000",
           // 删除线(through-line),下划线(underline),上划线,暂时支持underline
@@ -302,37 +331,53 @@ export default (function() {
         const edSaveRange = ed.saveRange.bind(ed);
         const edRedirectRange = ed.redirectRange.bind(ed);
         // core挂载到this
-
         this.core = ed;
-        // console.log("------------created----------", ed);
+
         // 关于mouseup\mouseleave\click事件的委托
         const crimEditor = this;
 
         const checkStyleBind = checkStyle.bind(crimEditor);
-        crimEditor.on(dom77, "keyup", function() {
-          console.log("test", crimEditor.toolbar.buttonlist[0].srcClass);
+        crimEditor.on(dom77, "keyup", function(event) {
+          console.log("==========read button BOLD start");
+          console.log(crimEditor.toolbar.buttonlist[0].srcClass);
+          console.log(crimEditor.toolbar.buttonlist[0].cssAttr);
+          console.log(crimEditor.toolbar.buttonlist[0].freeClickSwitch);
+          console.log("==========read button BOLD end");
+          if ([8, 37, 38, 39, 40, 46, 32, 229].indexOf(event.keyCode) !== -1) {
+            checkStyleBind(crimEditor.core.range, crimEditor.core.trees);
+            // return;
+          }
         });
         crimEditor.on(dom77, "rangeModified", async function() {
-          // console.log("event rangeModified trigged outside");
-          // const data = await read("sendToToolbar", 1);
-          // console.log("data in indexedDB", data);
-          // const tempRange = buildNewRange(data.rangeFactor);
-          // console.log(tempRange)
-          // const tempRange = window.getSelection().getRangeAt(0);
+          console.log(
+            "rangeModified detected, checkstyle function will be executed"
+          );
           checkStyleBind(crimEditor.core.range, crimEditor.core.trees);
+        });
+        crimEditor.on(dom77, "resetButtonConfig", async function() {
+          // checkStyleBind(crimEditor.core.range, crimEditor.core.trees);
+          // console.log("重置按钮配置");
+          // if (crimEditor.toolbar.currentButton.configReset) {
+          //   crimEditor.toolbar.currentButton.configReset();
+          //   crimEditor.toolbar.currentButton = {};
+          // }
+        });
+        // 在焦点模式下通过click时间每一次触发checkStyle之后，将特殊button的样式开关，使其临时改变样式与cssattr；
+        crimEditor.on(dom77, "specialclickswitchON", async function() {
+          // checkStyleBind(crimEditor.core.range, crimEditor.core.trees);
+          crimEditor.toolbar.buttonlist.forEach(item => {
+            console.log(
+              `现在将设置按钮${item.buttonName}的freeClickSwitch为true`
+            );
+            item.freeClickSwitch = true;
+          });
         });
         crimEditor.on(dom77, "customclick", async function(event) {
           console.log("customclick", event.detail);
           const button = crimEditor.toolbar.getButton(event.detail.buttonName);
-          // console.log(crimEditor.toolbar.getButton(event.detail.buttonName));
-
-          // 传入range-stage2等参数
+          crimEditor.toolbar.currentButton = button;
           const changeStyleBind = changeStyle.bind(button);
-          // const elementList =
 
-          // const data = await read("sendToToolbar", 1);
-          // console.log("stage2 data", data)
-          // const tempRange = buildNewRange(data.rangeFactor);
           console.log(
             "------------stage2 temp range---------",
             crimEditor.core.range
@@ -393,7 +438,7 @@ export default (function() {
           if (res.type !== "scenePointMode") {
             // 若为选区模式，不需要传制图机
             changeStyleBind(crimEditor, elementList_Stage2);
-            // crimEditor.toolbar.updateButtonDom(button.buttonName)
+            crimEditor.toolbar.updateButtonDom(button.buttonName);
             edRender();
             edRedirectRange(crimEditor.core.store, exactcut.rangeFactor);
             edSaveRange();
@@ -402,23 +447,22 @@ export default (function() {
               crimEditor.core.store,
               exactcut.rangeFactor
             );
-            checkStyleBind(crimEditor.core.range, crimEditor.core.trees);
+            // checkStyleBind(crimEditor.core.range, crimEditor.core.trees);
             return;
           }
-          // 若为焦点模式，传输制图机
+          // 若为焦点模式，传输制图机,不入栈
           changeStyleBind(
             crimEditor,
             elementList_Stage2,
             crimEditor.theSilentCartoGrapher
           );
           edRender();
+          // console.log("finish change style",crimEditor.core.range)
           edRedirectRange(crimEditor.core.store, exactcut.rangeFactor);
-          edSaveRange();
-          // edSaveStack(
-          //   crimEditor.core.trees,
-          //   crimEditor.core.store,
-          //   exactcut.rangeFactor
-          // );
+          if (crimEditor.core.range.watcherTrigger === "OFF") {
+            edSaveRange();
+            crimEditor.core.range.watcherTrigger = "OFF";
+          }
           console.log(
             "theSilentCartoGrapher after free click",
             // button,

@@ -5,13 +5,14 @@ export default (function() {
   class ToolBar {
     constructor() {
       // this.buttons = buttons;
-      this.buttonlist = [italic];
+      this.buttonlist = [bold, italic];
       this.container = {};
     }
     init(el) {
       this.container = el;
       this.container.style.width = "100%";
       // this.container.style.height =
+      this.currentButton = {};
       this.render();
       // this.buttonlist.forEach(item => {
       //   const buttonDom = item.buildButtonDom();

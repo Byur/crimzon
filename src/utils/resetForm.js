@@ -1,7 +1,7 @@
 /**
  * @todo sometimes you can reset an Object type param which is used for list_query request by this function
  * @param {{attrA:"xxx",attrB:"xxx"}} object
- * @param {[]} unexcept
+ * @param {['keya','keyb']} unexcept
  */
 export default function resetForm(object, unexcept) {
   for (let i in object) {

@@ -28,7 +28,7 @@ import { saveStack } from "../../api/stack";
 import { underline } from "../../components/buttons";
 
 const handlerInput = function handlerInput(event) {
-  // console.log("handlerInput", this);
+  console.log("handlerInput range trigger", this.range);
   // console.log(
   //   "___________________________________throttle",
   //   event.target,
@@ -62,6 +62,7 @@ const handlerInput = function handlerInput(event) {
         this.render();
         this.redirectRange(this.store, fornewrange);
         this.saveStack(this.trees, this.store, fornewrange);
+        // this.dom7.dispatchEvent(this.resetButtonConfig);
         setTimeout(() => {
           this.saveRange();
           this.range.watcherTrigger = "ON";
@@ -84,6 +85,7 @@ const handlerInput = function handlerInput(event) {
             this.render();
             this.redirectRange(this.store, fornewrange);
             // this.saveStack(this.trees, this.store, fornewrange);
+            this.dom7.dispatchEvent(this.resetButtonConfig);
             setTimeout(() => {
               this.saveRange();
               // this.range.watcherTrigger = "ON";
@@ -98,6 +100,7 @@ const handlerInput = function handlerInput(event) {
             this.render();
             this.redirectRange(this.store, fornewrange);
             this.saveStack(this.trees, this.store, fornewrange);
+            this.dom7.dispatchEvent(this.resetButtonConfig);
             setTimeout(() => {
               this.saveRange();
               // this.range.watcherTrigger = "ON";
@@ -119,6 +122,7 @@ const handlerInput = function handlerInput(event) {
               this.render();
               this.redirectRange(this.store, fornewrange);
               this.saveStack(this.trees, this.store, fornewrange);
+              this.dom7.dispatchEvent(this.resetButtonConfig);
               setTimeout(() => {
                 this.saveRange();
                 // this.range.watcherTrigger = "ON";
@@ -138,6 +142,7 @@ const handlerInput = function handlerInput(event) {
             this.render();
             this.redirectRange(this.store, fornewrange);
             this.saveStack(this.trees, this.store, fornewrange);
+            this.dom7.dispatchEvent(this.resetButtonConfig);
             setTimeout(() => {
               this.saveRange();
               // this.range.watcherTrigger = "ON";
@@ -346,6 +351,7 @@ const end = function end(event) {
   // );
 
   let currentRange = this.range;
+  console.log("range in compositionend", this.range);
   if (this.compositionInputRangeFactor.startId !== undefined) {
     console.log("新建range", this.compositionInputRangeFactor);
     const startContainer = document.getElementById(
@@ -369,7 +375,11 @@ const end = function end(event) {
       endContainer.childNodes[0],
       this.compositionInputRangeFactor.endOffset
     );
+    console.log("before create new range", this.range);
     currentRange = newRange;
+    // if (this.range.watcherTrigger) {
+    currentRange.watcherTrigger = this.range.watcherTrigger;
+    // }
     // console.log("新建的range：", currentRange);
   }
   // console.log(Object.keys(currentRange), Object.keys(this.range));
@@ -396,7 +406,10 @@ const end = function end(event) {
     this.saveRange();
     this.directInput = true;
     currentRange.watcherTrigger = "ON";
-    // console.log("刷新directInput", this.directInput);
+    // 0814，测试中文输入时调用rangeModifiedEvent事件的意义,暂时不明，因此注释此行，日后若出现异常则恢复此行代码；
+    // this.dom7.dispatchEvent(this.rangeModifiedEvent);
+    this.dom7.dispatchEvent(this.resetButtonConfig);
+    console.log("刷新directInput", this.directInput);
     // this.saveRange();
     // setTimeout(() => {
     //   this.saveRange();
@@ -483,6 +496,7 @@ const checkRange = _.debounce(async function() {
     });
     if (resPut) {
       this.dom7.dispatchEvent(this.rangeModifiedEvent);
+      this.dom7.dispatchEvent(this.checkSwitchByClickON);
     }
     return;
   }
@@ -500,6 +514,7 @@ const checkRange = _.debounce(async function() {
   });
   if (resAdd) {
     this.dom7.dispatchEvent(this.rangeModifiedEvent);
+    this.dom7.dispatchEvent(this.checkSwitchByClickON);
   }
   return;
   // 当前先用session临时存放trees和range
@@ -660,207 +675,14 @@ export default (function() {
       this.rangeModifiedEvent = new CustomEvent("rangeModified", {
         bubbles: true
       });
+      this.checkSwitchByClickON = new CustomEvent("specialclickswitchON", {
+        bubbles: true
+      });
+      this.resetButtonConfig = new CustomEvent("resetButtonConfig", {
+        bubbles: true
+      });
     }
 
-    // setStyle(index) {
-    //   const buttonName = this.toolBar[index].buttonName;
-    //   console.log(buttonName);
-    // this.saveRange();
-    //   const res = this.checkStyle(index);
-    //   console.log("ready to setStyle", _.cloneDeep(res.receive));
-    //   let elementList_Stage2 = [];
-    //   // 精修
-    //   switch (res.type) {
-    //     case "spanParas":
-    //       elementList_Stage2 = refinedNodesByRange_stage2.spanParas(
-    //         res.receive,
-    //         this.trees,
-    //         this.range,
-    //         this.store
-    //       );
-    //       break;
-    //     case "spanSpans":
-    //       elementList_Stage2 = refinedNodesByRange_stage2.spanSpans(
-    //         res.receive,
-    //         this.trees,
-    //         this.range,
-    //         this.store
-    //       );
-    //       break;
-    //     case "withinSingleSpan":
-    //       elementList_Stage2 = refinedNodesByRange_stage2.withinSingleSpan(
-    //         res.receive,
-    //         this.trees,
-    //         this.range,
-    //         this.store
-    //       );
-    //       break;
-    //     case "scenePointMode":
-    //       elementList_Stage2 = refinedNodesByRange_stage2.scenePointMode(
-    //         // res.receive,
-    //         this.trees,
-    //         this.range,
-    //         this.store
-    //         // this.theSilentCartoGrapher,
-    //       );
-    //       break;
-    //     default:
-    //       console.log("default", res.type);
-    //       break;
-    //   }
-    //   // 涉及到页面重排
-    //   if (res.type !== "scenePointMode") {
-    //     console.log("elementList_Stage2 from core", elementList_Stage2);
-    //     this.toolBar[index].changeStyle(elementList_Stage2);
-    //     setTimeout(() => {
-    //       // rangeForTextChange(this.store);
-    //       // window.sleep()
-    //       this.saveRange();
-    //       // this.range.watcherTrigger = "ON";
-    //     }, 0);
-    //     return;
-    //   }
-    //   // 改变当前theSilentCartoGrapher的配置,不涉及重排,在此之后的下一次输入，将使用新配置;
-    //   console.log("scenePointMode");
-    //   // this.theSilentCartoGrapher = elementList_Stage2[0].style;
-    //   this.toolBar[index].changeStyle(res.receive, this.theSilentCartoGrapher);
-    //   setTimeout(() => {
-    //     // rangeForTextChange(this.store);
-    //     // window.sleep()
-    //     this.range.watcherTrigger = "OFF";
-    //   }, 0);
-    //   return;
-    // }
-
-    // checkStyle(index) {
-    //   // 不闭合，rangeMode,涉及文本改动
-    //   let receive = [];
-    //   if (!this.range.collapsed) {
-    //     if (this.range.commonAncestorContainer.id === "origin") {
-    //       // return paragraphs
-    //       console.log(
-    //         "test spanParas after watch",
-    //         this.range.startContainer,
-    //         this.range.endContainer
-    //       );
-    //       receive = refinedNodesByRange_stage1.spanParas(
-    //         this.trees,
-    //         this.range
-    //       );
-    //       console.log("spanParas", receive);
-    //       toolBar.forEach(item => {
-    //         console.log("item", item);
-    //         if (item.type === "switch") {
-    //           const boolean = isAllActivated_switch(receive, item.cssAttr);
-    //           console.log("inside vue instance", boolean);
-    //           item.isActived(boolean);
-    //         }
-    //       });
-    //       return { receive, type: "spanParas" };
-    //     } else if (
-    //       this.range.commonAncestorContainer.tagName === "P" &&
-    //       this.range.startContainer !== this.range.endContainer
-    //     ) {
-    //       receive = refinedNodesByRange_stage1.spanSpans(
-    //         this.trees,
-    //         this.range
-    //       );
-    //       console.log("spanSpans", receive);
-    //       toolBar.forEach(item => {
-    //         console.log("item", item);
-    //         if (item.type === "switch") {
-    //           const boolean = isAllActivated_switch(receive, item.cssAttr);
-    //           console.log("inside vue instance", boolean);
-    //           item.isActived(boolean);
-    //         }
-    //       });
-    //       return { receive, type: "spanSpans" };
-    //     } else if (this.range.startContainer === this.range.endContainer) {
-    //       receive = refinedNodesByRange_stage1.withinSingleSpan(
-    //         this.trees,
-    //         this.range
-    //       );
-    //       console.log("withinSingleSpan from core", receive);
-    //       toolBar.forEach(item => {
-    //         console.log("item", item);
-    //         if (item.type === "switch") {
-    //           const boolean = isAllActivated_switch(receive, item.cssAttr);
-    //           console.log("inside vue instance", boolean);
-    //           item.isActived(boolean);
-    //         }
-    //       });
-    //       return { receive, type: "withinSingleSpan" };
-    //       // return span which text in
-    //     }
-    //   }
-    //   // 闭合，pointMode,不涉及文本改动;
-    //   else {
-    //     receive = refinedNodesByRange_stage1.scenePointMode(
-    //       this.trees,
-    //       this.range
-    //     );
-    //     console.log("scenePointMode IN CHECK STYLE", receive);
-
-    //     toolBar.forEach((item, i) => {
-    //       console.log("item", item);
-    //       if (this.range.watcherTrigger === "OFF" && i === index) {
-    //         // item.isActived(!boolean);
-    //         // console.log（）
-    //         // do nothing
-    //       } else {
-    //         if (item.type === "switch") {
-    //           const boolean = isAllActivated_switch(receive, item.cssAttr);
-    //           console.log("inside vue instance", boolean);
-    //           item.isActived(boolean);
-    //           // if (){}
-    //           // console.log('aftercheckout',this.range)
-    //         }
-    //       }
-    //     });
-    //     // if (receive[0] && receive[0].style) {
-    //     //   this.theSilentCartoGrapher = receive[0].style;
-    //     // }
-    //     // 添加当前
-    //     return { receive, type: "scenePointMode" };
-    //   }
-    // }
-
-    // checkRangeWhenNoCollapsed: _.debounce(function() {
-    //     if (this.range && !this.range.collapsed) {
-    //       this.saveRange();
-    //     }
-    //     return;
-    //   }, 50),
-
-    //   checkRange: _.debounce(function() {
-    //     this.saveRange();
-    //   }, 50),
-
-    // actionUndo() {
-    //   // 0527修改了半潜在缺陷:由于getStack(this.store, "undo")所获取的top被直接赋值给trees,使得渲染中的trees与store中normal的栈顶引用了同一个栈内存地址,因此在keyupkeydown等事件修改this.trees时,也修改了原则上只读的stack栈顶,并且在之后被压入第二位,栈顶被event最后的saveStack取代,导致出现栈顶而第二个栈的trees一样的缺陷,特在此,使用cloneDeep将getStack深拷贝再让trees使用,割裂他们(trees和stack)之间的引用关系
-    //   const afterUndo = _.cloneDeep(this.getStack(this.store, "undo"));
-    //   // console.log(
-    //   //   "actionUndo---------------------------------------------",
-    //   //   afterUndo.trees.children[0].children[1].text,
-    //   //   "\nrange",
-    //   //   afterUndo.range.startOffset
-    //   // );
-    //   this.trees = afterUndo.trees;
-    //   setTimeout(() => {
-    //     this.redirectRange(this.store, afterUndo.range);
-    //   }, 0);
-    // }
-    // actionRedo() {
-    //   const afterRedo = _.cloneDeep(this.getStack(this.store, "redo"));
-    //   this.trees = afterRedo.trees;
-    //   setTimeout(() => {
-    //     this.redirectRange(this.store, afterRedo.range);
-    //   }, 0);
-    // }
-
-    // handleBeforePaste() {
-    //   return;
-    // }
     /**
      * @event
      * 粘贴动作发生时的事件，包含了右键菜单栏复制和ctrl+v键，该处调用剪贴板api，但因为不需要对默认事件做出干涉，所以应该不需要考虑兼容性的问题，这里需要做的是把粘贴内容真正嵌入data中并且更新range
@@ -939,7 +761,7 @@ export default (function() {
       const ano2 = new ElementNode(
         "span",
         "lenox",
-        { color: "green", "font-weight": "bold" },
+        {},
         {},
         []
       );
@@ -952,11 +774,11 @@ export default (function() {
         []
       );
       // console.log("ano3.id", ano3.id);
-      ano1.id += 1;
+      // ano1.id += 1;
       ano1.parent = newPara;
-      ano2.id += 2;
+      // ano2.id += 2;
       ano2.parent = newPara;
-      ano3.id += 3;
+      // ano3.id += 3;
       ano3.parent = newPara;
       newPara.children.push(newinlineEle);
       newPara.children.push(ano1);
@@ -1000,7 +822,7 @@ export default (function() {
     init(el, theSilentCartoGrapher) {
       const ed = this;
       const container = el;
-      console.log('init',theSilentCartoGrapher)
+      console.log("init", theSilentCartoGrapher);
       this.theSilentCartoGrapher = theSilentCartoGrapher;
       // const container = document.getElementById(el);
       // const container = document.createElement("DIV");

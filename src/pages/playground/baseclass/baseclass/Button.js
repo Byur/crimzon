@@ -2,6 +2,7 @@ import Base from "../core/baseclass_base";
 // import { extend } from "lodash";
 // 具象化toobar的dom结构的时候，参考vueloader，使用createElement('XXX')之后再对真实dom进行操作
 
+
 // eslint-disable-next-line no-unused-vars
 const paintItAll_switch = function(
   cssAttr,
@@ -102,6 +103,7 @@ function isActived(boolean) {
     // this.cssAttr = this.cssAttrDeactivated;
     this.buttonDom.children[0].classList.remove(this.activateIconClass);
   }
+  console.log("检测class变化为", this.srcClass);
   this.buttonDom.children[0].classList.add(this.srcClass);
   // console.log("button after check style", this);
   // this.
@@ -123,31 +125,30 @@ const buildButtonDom = function() {
 
 // eslint-disable-next-line no-unused-vars
 /**
- * @description 焦点模式下自由切换按钮的正反面，同步表面用于判断的数据如cssAttr
+ * @description 自由点击切换icon样式与新增文本的样式配置
  */
-function freeClick() {
+// eslint-disable-next-line no-unused-vars
+function freeClick(status) {
   console.log(
-    "--------free click-before change button style-----------\n",
-    this.srcClass,
-    "\n",
-    this.cssAttr
+    "为false说明在按钮被点击之前，选中的元素不为bold或者italic，则即将把样式切换成激活态",
+    status
   );
-  if (this.cssAttr === this.cssAttrActivated) {
-    console.log("blaze to frost?");
+  if (status) {
+    console.log(
+      `类名即将从${this.activateIconClass},向${this.deactivateIconClass}转变`
+    );
     this.srcClass = this.deactivateIconClass;
-    this.cssAttr = this.cssAttrDeactivated;
     this.buttonDom.children[0].classList.remove(this.activateIconClass);
     this.buttonDom.children[0].classList.add(this.deactivateIconClass);
-    console.log("after shift frost-----------------", this.srcClass, this.cssAttr);
-    return;
+  } else {
+    console.log(
+      `类名即将从${this.deactivateIconClass},向${this.activateIconClass}转变`
+    );
+    this.srcClass = this.activateIconClass;
+    this.buttonDom.children[0].classList.remove(this.deactivateIconClass);
+    this.buttonDom.children[0].classList.add(this.activateIconClass);
   }
-
-  console.log("frost to blaze?");
-  this.srcClass = this.activateIconClass;
-  this.cssAttr = this.cssAttrActivated;
-  this.buttonDom.children[0].classList.remove(this.deactivateIconClass);
-  this.buttonDom.children[0].classList.add(this.activateIconClass);
-  console.log("after shift blaze-----------------", this.srcClass, this.cssAttr);
+  this.currentStatus = !status;
   return;
 }
 export default (function() {
@@ -178,6 +179,7 @@ export default (function() {
       deactivateIconClass
     ) {
       super();
+      this.currentStatus = null;
       this.buttonName = buttonName;
       this.type = type;
       this.cssAttrActivated = cssAttrActivated;
@@ -188,10 +190,11 @@ export default (function() {
       // 初始化时，srcClass为未触发状态的值
       this.srcClass = this.deactivateIconClass;
       this.cssAttr = this.cssAttrActivated;
+      this.freeClickSwitch = false;
       // Button实例的DOM元素映射；
       this.buttonDom = {};
     }
-    // // 初始化结构与事件绑定
+    // 初始化结构与事件绑定
     init() {
       const button = this;
 
@@ -211,7 +214,13 @@ export default (function() {
       // this.buttonDom.on
       return cell;
     }
-    // 响应事件对button样式重渲染
+    // 属性初始化
+    configReset() {
+      this.srcClass = this.deactivateIconClass;
+      this.cssAttr = this.cssAttrActivated;
+      this.freeClickSwitch = false;
+      return;
+    }
   }
   // Button.prototype = Base.prototype;
   Button.prototype.isActived = isActived;

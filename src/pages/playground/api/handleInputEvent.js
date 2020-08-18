@@ -16,7 +16,7 @@ export const regularInput = {
    * @param {String} keyData
    */
   sceneDirectMode: (keyData, style, range, trees, store) => {
-    // console.log("watcherTrigger", range.watcherTrigger);
+    console.log("watcherTrigger", range.watcherTrigger, style);
     saveRange(store);
     /**
      * 待追加特殊字符转义 如空格转&nbsp;
@@ -187,7 +187,7 @@ export const regularInput = {
           endOffset: partAText.length + 1
         };
       } else {
-        // console.error("unexcept raneg", range);
+        console.error("unexcept raneg", range);
       }
       // });
       return;
@@ -209,8 +209,9 @@ export const regularInput = {
       const res = findTargetNode(currentOperateObj, trees);
       const target = res;
       console.log("test target text attr---------------", target);
+      console.log("test range ---------------", range);
       if (range.watcherTrigger !== "OFF") {
-        // console.log("normallll", target);
+        console.log("normallll", target);
         const currentNodeValue = partAText + keyData + partBText;
         // console.error("--------修改值---------", currentNodeValue);
         target.text = currentNodeValue;
@@ -235,7 +236,7 @@ export const regularInput = {
           endOffset: partAText.length + 1
         };
       }
-
+      console.log("use new style here", style)
       const partBContainer = new ElementNode(
         target.tag,
         partBText,
@@ -292,7 +293,7 @@ export const regularInput = {
     // // 0419有一个问题在于,当一个P级元素删除晚全部文本后,确实是会留下一个br站位保持换行,但是在此基础上新添加的文本是不在span标签中的,因而会对后续的trees造成影响,因此在这里追加一个判断,当currentOperateObj不为span时,创造一个span添加到P里
   },
   sceneComposiveMode: (wordKeeper, style, range, trees, store) => {
-    // console.log("sceneComposiveMode.range", range);
+    console.log("sceneComposiveMode.range", range);
     // console.log("watcherTrigger", range.watcherTrigger);
     if (range.startContainer.nodeType === 3) {
       // console.log("直球！");

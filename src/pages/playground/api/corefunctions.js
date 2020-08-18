@@ -1,4 +1,19 @@
 // let _ = require("lodash");
+// eslint-disable-next-line no-unused-vars
+export function compareNCombine(source, template) {
+  const validKeyList = [];
+  const keyList = Object.keys(source);
+  keyList.forEach(item => {
+    if (source[item] !== undefined || source[item] !== null) {
+      validKeyList.push(item);
+    }
+  });
+  validKeyList.forEach(i => {
+    source[i] = template[i];
+  });
+  console.log(source);
+  return false;
+};
 export function buildNewRange(rangeFactor) {
   // console
   const startContainer = document.getElementById(rangeFactor.startId);
